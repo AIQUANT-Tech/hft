@@ -1,0 +1,26 @@
+# Ignore files in the frontend directory
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.env*
+/frontend/.next
+/frontend/build
+/frontend/package-lock.json
+/frontend/pnpm-lock.yml
+/frontend/package-lock.json
+/frontend/pnpm-lock.yml
+/frontend/.gitignore
+
+# Ignore files in the backend directory
+/backend/node_modules/
+/backend/.env*
+/backend/build
+/backend/logs/
+/backend/tmp/
+/backend/src/config/encrypt*
+/backend/.gitignore
+/backend/package-lock.json
+/backend/pnpm-lock.yml
+
+# Ignore .vscode file
+/.vscode/
+.env
