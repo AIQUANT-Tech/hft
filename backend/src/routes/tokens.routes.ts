@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { databaseService } from "../services/databaseService.js";
+import { databaseService } from "../services/database.service.js";
 
 const router = Router();
 

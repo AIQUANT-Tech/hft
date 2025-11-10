@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { priceHistoryService } from "../services/priceHistoryService.js";
+import { priceHistoryService } from "../services/priceHistory.service.js";
 
 const router = Router();
 

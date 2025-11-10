@@ -32,6 +32,7 @@ export const config = {
     PASSWORD: process.env.DB_PASSWORD || "password",
     NAME: process.env.DB_NAME || "hft",
   },
+  PASSPHRASE: process.env.PASSPHRASE,
 } as const;
 
 export default config;

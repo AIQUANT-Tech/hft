@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import StockCard from "./components/StockCard";
 import SearchBar from "./components/SearchBar";
 import WalletConnect from "./components/WalletConnect";
-import AITradingSignals from "./components/AITradingSignals";
 import { BrowserWallet } from "@meshsdk/core";
 import {
   fetchTokens,
@@ -13,13 +12,13 @@ import {
   selectVerifiedFilter,
   selectIsSearching,
   selectSearchQuery,
-  setVerifiedFilter,
   resetSearch,
   type Token,
 } from "./redux/tokensSlice";
 import { useSelector, useDispatch } from "react-redux";
 import type { AppDispatch, RootState } from "./redux/store";
 import { ConnectWallet } from "./redux/walletSlice";
+import StrategyMonitor from "./components/StrategyMonitor";
 
 export const WalletContext = React.createContext<BrowserWallet | null>(null);
 
@@ -142,12 +141,6 @@ function App() {
     }
   };
 
-  // Toggle filter
-  const handleFilterToggle = (verifiedOnly: boolean) => {
-    dispatch(setVerifiedFilter(verifiedOnly));
-    dispatch(resetSearch());
-  };
-
   // Pagination handlers
   const handlePreviousPage = () => {
     if (localPage > 1) {
@@ -220,6 +213,8 @@ function App() {
           </div>
         </header>
 
+        <StrategyMonitor />
+
         {error && (
           <div className="text-center p-5 text-red-400 bg-red-500/10 border border-red-500/20 rounded-2xl mb-6">
             <p className="font-semibold mb-2">⚠️ Error</p>
@@ -233,30 +228,6 @@ function App() {
           </div>
         )}
 
-        {/* Filter Toggle */}
-        <div className="mb-6 flex gap-2 bg-slate-800/50 rounded-lg p-1 border border-white/10 w-fit">
-          <button
-            onClick={() => handleFilterToggle(true)}
-            className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
-              showVerifiedOnly
-                ? "bg-blue-500 text-white shadow-lg"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            ✓ Verified Only
-          </button>
-          <button
-            onClick={() => handleFilterToggle(false)}
-            className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
-              !showVerifiedOnly
-                ? "bg-blue-500 text-white shadow-lg"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            🌐 All Tokens
-          </button>
-        </div>
-
         {/* Search Bar */}
         <SearchBar
           onSearch={handleSearch}
@@ -266,23 +237,6 @@ function App() {
           isRefreshing={loading}
           totalTokens={tokens.length}
         />
-
-        {/* AI Trading Signals */}
-        {tokens.length > 0 && (
-          <AITradingSignals
-            tokens={tokens}
-            onTokenSelect={(token) => {
-              setSelectedToken(token);
-              // Scroll to the token card
-              const element = document.getElementById(
-                `token-${token.token_id}`
-              );
-              if (element) {
-                element.scrollIntoView({ behavior: "smooth", block: "center" });
-              }
-            }}
-          />
-        )}
 
         {currentTokens.length === 0 ? (
           <div className="text-center py-20 text-gray-400">

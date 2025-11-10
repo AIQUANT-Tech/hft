@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { aggregatorService } from "../services/aggregatorService.js";
+import { aggregatorService } from "../services/aggregator.service.js";
 
 const router = Router();
 
