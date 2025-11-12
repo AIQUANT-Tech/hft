@@ -17,6 +17,7 @@ import {
   PURGE,
   REGISTER,
 } from "redux-persist";
+import themeReducer from "./themeSlice";
 import storage from "redux-persist/lib/storage";
 import storageSession from "redux-persist/lib/storage/session";
 
@@ -47,7 +48,8 @@ const persistedTokensReducer = persistReducer(
 const rootReducer = combineReducers({
   wallet: persistedWalletReducer,
   tokens: persistedTokensReducer,
-  price: priceReducer, // Add price reducer (not persisted)
+  price: priceReducer,
+  theme: themeReducer,
 });
 
 export const store = configureStore({

@@ -1,20 +1,26 @@
-import {
-  createSlice,
-  createAsyncThunk,
-  type PayloadAction,
-} from "@reduxjs/toolkit";
+// src/store/slices/token.slice.ts
+
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
 
+// ✅ Updated interface to match your DB response
 export interface Token {
-  token_id: string;
-  logo: string;
-  ticker: string;
-  is_verified: boolean;
-  price_by_ada: number;
-  project_name: string;
-  decimals: number;
+  id: number;
+  poolId: string;
+  symbol: string;
+  name: string;
+  policyId: string;
+  assetName: string;
+  priceAda: string;
+  liquidityTvl: string;
+  assetA: string;
+  assetB: string;
+  dexSource: string;
+  lastUpdated: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface TokensState {
@@ -22,9 +28,12 @@ interface TokensState {
   loading: boolean;
   error: string | null;
   lastFetchTime: number | null;
-  showVerifiedOnly: boolean;
-  isSearching: boolean; // ✅ Track search state separately
-  searchQuery: string; // ✅ Current search query
+  isSearching: boolean;
+  searchQuery: string;
+  // ✅ Pagination state
+  currentPage: number;
+  totalOnPage: number;
+  hasMore: boolean;
 }
 
 const initialState: TokensState = {
@@ -32,39 +41,35 @@ const initialState: TokensState = {
   loading: false,
   error: null,
   lastFetchTime: null,
-  showVerifiedOnly: true,
   isSearching: false,
   searchQuery: "",
+  currentPage: 1,
+  totalOnPage: 0,
+  hasMore: true,
 };
 
 /**
- * Fetch tokens (one page) - for refresh/filter
+ * ✅ Fetch tokens from local database (paginated)
  */
 export const fetchTokens = createAsyncThunk(
   "tokens/fetchTokens",
   async (
-    params: {
-      onlyVerified?: boolean;
+    _params: {
+      page?: number;
+      count?: number;
+      offset?: number;
     } = {},
     { rejectWithValue }
   ) => {
     try {
-      const { onlyVerified = true } = params;
-
-      const response = await axios.post(
-        `${API_BASE_URL}/api/aggregator/search-tokens`,
-        {
-          query: "",
-          only_verified: onlyVerified,
-        }
-      );
+      const response = await axios.get(`${API_BASE_URL}/api/tokens`, {});
 
       const tokenCount = response.data.count || 0;
-      const tokenType = onlyVerified ? "verified" : "all";
-      console.log(`✅ Fetched ${tokenCount} ${tokenType} tokens`);
+      console.log(`✅ Fetched ${tokenCount} tokens from database`);
 
       return response.data;
     } catch (error: any) {
+      console.error("❌ Failed to fetch tokens:", error);
       return rejectWithValue(
         error.response?.data?.error || "Failed to fetch tokens"
       );
@@ -73,33 +78,72 @@ export const fetchTokens = createAsyncThunk(
 );
 
 /**
- * Search tokens by query - NEW: API-based search
+ * ✅ Search tokens in local database
  */
 export const searchTokens = createAsyncThunk(
   "tokens/searchTokens",
-  async (
-    params: { query: string; onlyVerified?: boolean },
-    { rejectWithValue }
-  ) => {
+  async (params: { query: string }, { rejectWithValue }) => {
     try {
-      const { query, onlyVerified = false } = params;
+      const { query } = params;
 
-      const response = await axios.post(
-        `${API_BASE_URL}/api/aggregator/search-tokens`,
-        {
-          query,
-          only_verified: onlyVerified,
-        }
+      console.log(`🔍 Searching tokens: "${query}"`);
+
+      // Search by symbol or name
+      const response = await axios.get(`${API_BASE_URL}/api/tokens`, {
+        params: { page: 1, count: 100, offset: 0 },
+      });
+
+      // Filter results locally (or add a search endpoint to backend)
+      const allTokens = response.data.data || [];
+      const filteredTokens = allTokens.filter(
+        (token: Token) =>
+          token.symbol.toLowerCase().includes(query.toLowerCase()) ||
+          token.name.toLowerCase().includes(query.toLowerCase()) ||
+          token.policyId.toLowerCase().includes(query.toLowerCase())
       );
 
       console.log(
-        `✅ Search found ${response.data.count} tokens for "${query}"`
+        `✅ Search found ${filteredTokens.length} tokens for "${query}"`
       );
 
-      return { data: response.data, query };
+      return { data: filteredTokens, query };
     } catch (error: any) {
+      console.error("❌ Failed to search tokens:", error);
       return rejectWithValue(
         error.response?.data?.error || "Failed to search tokens"
+      );
+    }
+  }
+);
+
+/**
+ * ✅ Load more tokens (pagination)
+ */
+export const loadMoreTokens = createAsyncThunk(
+  "tokens/loadMoreTokens",
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const state = getState() as { tokens: TokensState };
+      const { tokens, currentPage } = state.tokens;
+
+      const nextOffset = tokens.length;
+      const count = 100;
+
+      console.log(
+        `🔍 Loading more tokens: offset=${nextOffset}, count=${count}`
+      );
+
+      const response = await axios.get(`${API_BASE_URL}/api/tokens`, {
+        params: { page: currentPage, count, offset: nextOffset },
+      });
+
+      console.log(`✅ Loaded ${response.data.count} more tokens`);
+
+      return response.data;
+    } catch (error: any) {
+      console.error("❌ Failed to load more tokens:", error);
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to load more tokens"
       );
     }
   }
@@ -113,9 +157,8 @@ const tokensSlice = createSlice({
       state.tokens = [];
       state.error = null;
       state.searchQuery = "";
-    },
-    setVerifiedFilter: (state, action: PayloadAction<boolean>) => {
-      state.showVerifiedOnly = action.payload;
+      state.currentPage = 1;
+      state.hasMore = true;
     },
     resetSearch: (state) => {
       state.searchQuery = "";
@@ -131,8 +174,11 @@ const tokensSlice = createSlice({
       .addCase(fetchTokens.fulfilled, (state, action) => {
         state.loading = false;
         state.tokens = action.payload.data || [];
+        state.totalOnPage = action.payload.totalOnPage || 0;
+        state.currentPage = action.payload.page || 1;
+        state.hasMore = (action.payload.data || []).length === 100; // More if we got full page
         state.lastFetchTime = Date.now();
-        state.searchQuery = ""; // Clear search on fetch
+        state.searchQuery = "";
       })
       .addCase(fetchTokens.rejected, (state, action) => {
         state.loading = false;
@@ -148,19 +194,35 @@ const tokensSlice = createSlice({
       })
       .addCase(searchTokens.fulfilled, (state, action) => {
         state.isSearching = false;
-        state.tokens = action.payload.data.data || [];
+        state.tokens = action.payload.data;
         state.searchQuery = action.payload.query;
         state.lastFetchTime = Date.now();
+        state.hasMore = false; // Search shows all results
       })
       .addCase(searchTokens.rejected, (state, action) => {
         state.isSearching = false;
         state.error = action.payload as string;
       });
+
+    // loadMoreTokens
+    builder
+      .addCase(loadMoreTokens.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(loadMoreTokens.fulfilled, (state, action) => {
+        state.loading = false;
+        const newTokens = action.payload.data || [];
+        state.tokens = [...state.tokens, ...newTokens];
+        state.hasMore = newTokens.length === 100;
+      })
+      .addCase(loadMoreTokens.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
   },
 });
 
-export const { clearTokens, setVerifiedFilter, resetSearch } =
-  tokensSlice.actions;
+export const { clearTokens, resetSearch } = tokensSlice.actions;
 
 export const selectTokens = (state: { tokens: TokensState }) =>
   state.tokens.tokens;
@@ -168,11 +230,13 @@ export const selectTokensLoading = (state: { tokens: TokensState }) =>
   state.tokens.loading;
 export const selectTokensError = (state: { tokens: TokensState }) =>
   state.tokens.error;
-export const selectVerifiedFilter = (state: { tokens: TokensState }) =>
-  state.tokens.showVerifiedOnly;
 export const selectIsSearching = (state: { tokens: TokensState }) =>
   state.tokens.isSearching;
 export const selectSearchQuery = (state: { tokens: TokensState }) =>
   state.tokens.searchQuery;
+export const selectHasMore = (state: { tokens: TokensState }) =>
+  state.tokens.hasMore;
+export const selectCurrentPage = (state: { tokens: TokensState }) =>
+  state.tokens.currentPage;
 
 export default tokensSlice.reducer;

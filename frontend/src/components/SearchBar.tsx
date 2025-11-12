@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+// src/components/SearchBar.tsx
+
+import { useState, useEffect, useRef } from "react";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -18,22 +20,37 @@ const SearchBar = ({
   totalTokens,
 }: SearchBarProps) => {
   const [inputValue, setInputValue] = useState("");
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSearch = () => {
-    if (inputValue.trim()) {
-      onSearch(inputValue.trim());
+  // ✅ Search on every keypress with debouncing (300ms delay)
+  useEffect(() => {
+    // Clear previous timeout
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
     }
-  };
+
+    // If input is empty, reset
+    if (!inputValue.trim()) {
+      onReset();
+      return;
+    }
+
+    // Set new timeout for search
+    debounceTimeout.current = setTimeout(() => {
+      onSearch(inputValue.trim());
+    }, 300); // 300ms delay
+
+    // Cleanup on unmount
+    return () => {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
+    };
+  }, [inputValue]); // Trigger on every input change
 
   const handleReset = () => {
     setInputValue("");
     onReset();
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
   };
 
   return (
@@ -53,7 +70,7 @@ const SearchBar = ({
             <>🔄 Refresh Data</>
           )}
         </button>
-        <span className="px-4 py-2 bg-[#1A2238] border border-white/10 rounded-xl text-gray-400 text-sm">
+        <span className="px-4 py-2 bg-gray-200 dark:bg-[#1A2238] border border-gray-300 dark:border-white/10 rounded-xl text-gray-700 dark:text-gray-400 text-sm">
           {totalTokens} tokens
         </span>
       </div>
@@ -62,37 +79,27 @@ const SearchBar = ({
         <div className="relative flex items-center">
           <input
             type="text"
-            className="w-80 px-4 py-3 bg-[#1A2238] border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Search tokens by name or ticker..."
+            className="w-80 px-4 py-3 bg-gray-100 dark:bg-[#1A2238] border border-gray-300 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Search tokens (real-time)..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
             disabled={isSearching}
           />
-          <span className="absolute right-4 text-gray-400">🔍</span>
+          <span className="absolute right-4 text-gray-500 dark:text-gray-400">
+            {isSearching ? (
+              <div className="w-4 h-4 border-2 border-transparent border-t-current rounded-full animate-spin"></div>
+            ) : (
+              "🔍"
+            )}
+          </span>
         </div>
 
         <button
-          onClick={handleSearch}
-          disabled={isSearching || !inputValue.trim()}
-          className="px-6 py-3 bg-linear-to-r from-green-600 to-green-500 text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          {isSearching ? (
-            <>
-              <div className="w-4 h-4 border-2 border-transparent border-t-current rounded-full animate-spin"></div>
-              Searching...
-            </>
-          ) : (
-            <>🔍 Search</>
-          )}
-        </button>
-
-        <button
           onClick={handleReset}
-          disabled={isSearching}
-          className="px-6 py-3 bg-linear-to-r from-gray-700 to-gray-600 text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isSearching || !inputValue}
+          className="px-6 py-3 bg-linear-to-r from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-600 text-gray-900 dark:text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          ↺ Reset
+          ↺ Clear
         </button>
       </div>
     </div>

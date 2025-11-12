@@ -97,11 +97,12 @@ export class WalletController {
 
   static async createWallet(req: Request, res: Response): Promise<void> {
     try {
-      const address = await CardanoService.createWallet();
+      const { address, mnemonic } = await CardanoService.createWallet();
 
       res.status(201).json({
         success: true,
         address,
+        mnemonic,
         network: "Preprod",
       });
     } catch (error: any) {

@@ -58,7 +58,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ tokenId, days = 30 }) => {
             ⚠️ Unable to Load Chart
           </p>
           <p className="text-red-300 mb-4">{error}</p>
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
             This token may not be listed on CoinGecko yet, or the ticker mapping
             needs to be updated.
           </p>

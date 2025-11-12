@@ -13,7 +13,7 @@ export interface StrategyConfig {
 }
 
 export abstract class BaseStrategy {
-  protected config: StrategyConfig;
+  public config: StrategyConfig;
   protected lastExecutionTime?: Date;
 
   constructor(config: StrategyConfig) {

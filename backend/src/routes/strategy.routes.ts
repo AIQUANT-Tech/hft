@@ -8,6 +8,7 @@ import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import environment from "../config/environment.js";
 import { randomUUID } from "crypto";
 import Big from "big.js";
+import { TradeOrder } from "../models/tradeOrder.model.js";
 
 const router = Router();
 
@@ -65,7 +66,10 @@ router.post("/price-target", (req, res) => {
   }
 });
 
-// ✅ GET /api/strategy/live
+// src/routes/strategy.routes.ts
+
+// In the /live endpoint, add orderCreated tracking:
+
 router.get("/live", async (req, res) => {
   try {
     const strategies = strategyManager.getAllStrategies();
@@ -91,7 +95,6 @@ router.get("/live", async (req, res) => {
           continue;
         }
 
-        // ✅ Find pool in database
         const poolToken = await PoolToken.findOne({
           where: { policyId },
         });
@@ -106,11 +109,9 @@ router.get("/live", async (req, res) => {
           continue;
         }
 
-        // ✅ Get pool data with correct property access
         const assetAStr = poolToken.get("assetA") as string;
         const assetBStr = poolToken.get("assetB") as string;
 
-        // ✅ Parse assets correctly
         const assetA: Asset =
           assetAStr === "lovelace" || assetAStr === ""
             ? { policyId: "", tokenName: "" }
@@ -131,7 +132,6 @@ router.get("/live", async (req, res) => {
               }
             : { policyId: "", tokenName: "" };
 
-        // ✅ Get pool by pair - returns a single pool or null
         const pool = await blockfrostAdapter.getV2PoolByPair(assetA, assetB);
 
         if (!pool) {
@@ -144,7 +144,6 @@ router.get("/live", async (req, res) => {
           continue;
         }
 
-        // ✅ Get LIVE price from pool
         const [priceA, priceB] = await blockfrostAdapter.getV2PoolPrice({
           pool,
         });
@@ -174,6 +173,15 @@ router.get("/live", async (req, res) => {
             ? currentPrice > targetPrice
             : currentPrice < targetPrice;
 
+        // ✅ Check if order was created for this strategy
+        const hasOrder = await TradeOrder.findOne({
+          where: {
+            tradingPair: status.tradingPair,
+            walletAddress: config.walletAddress,
+            status: ["pending", "executing", "completed"],
+          },
+        });
+
         enrichedStrategies.push({
           id: s.id,
           name: status.name,
@@ -188,6 +196,7 @@ router.get("/live", async (req, res) => {
           priceDifferencePercent: priceDiffPct.toFixed(2),
           distanceToTarget: Math.abs(priceDiff).toFixed(6),
           conditionMet: conditionMet,
+          orderCreated: !!hasOrder, // ✅ Add this field
           status: conditionMet ? "READY" : "WAITING",
           lastUpdate: new Date().toISOString(),
         });
@@ -211,6 +220,49 @@ router.get("/live", async (req, res) => {
       success: false,
       error: (error as Error).message,
     });
+  }
+});
+
+router.post("/stop/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    const strategy = strategyManager.getStrategy(id);
+
+    if (!strategy) {
+      res.status(404).json({ error: "Strategy not found" });
+      return;
+    }
+
+    strategy.config.isActive = false;
+
+    res.json({
+      success: true,
+      message: `Strategy ${id} stopped`,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Start/Resume strategy
+router.post("/start/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    const strategy = strategyManager.getStrategy(id);
+
+    if (!strategy) {
+      res.status(404).json({ error: "Strategy not found" });
+      return;
+    }
+
+    strategy.config.isActive = true;
+
+    res.json({
+      success: true,
+      message: `Strategy ${id} started`,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 

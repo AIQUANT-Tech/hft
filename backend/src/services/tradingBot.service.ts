@@ -14,7 +14,7 @@ import {
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import { Lucid, Blockfrost } from "lucid-cardano";
 import environment from "../config/environment.js";
-import { EncryptionUtil } from "../utils/encryption.util.js"; // ✅ Import
+import { EncryptionUtil } from "../utils/encryption.util.js"; // Import
 import Big from "big.js";
 import fs from "fs";
 import path from "path";
@@ -197,7 +197,6 @@ export class TradingBotService {
     }
   }
 
-  // ✅ FIXED: Load and decrypt seed phrase
   private async executeSwap(order: TradeOrder): Promise<string> {
     try {
       console.log(
@@ -215,7 +214,7 @@ export class TradingBotService {
         "Preprod"
       );
 
-      // ✅ Load wallet with encrypted seed phrase
+      // Load wallet with encrypted seed phrase
       const walletPath = path.join(
         process.cwd(),
         "wallets",
@@ -231,7 +230,7 @@ export class TradingBotService {
 
       const walletData = JSON.parse(fs.readFileSync(walletPath, "utf-8"));
 
-      // ✅ Decrypt the seed phrase
+      // Decrypt the seed phrase
       if (!walletData.encryptedMnemonic) {
         throw new Error(
           `Encrypted mnemonic not found in wallet file: ${walletPath}`
@@ -247,12 +246,12 @@ export class TradingBotService {
 
       console.log(`✅ Seed phrase decrypted successfully`);
 
-      // ✅ Select wallet from seed phrase
+      // Select wallet from seed phrase
       lucid.selectWalletFromSeed(seedPhrase);
 
       // Get wallet address to verify
       const walletAddress = await lucid.wallet.address();
-      console.log(`✅ Wallet loaded: ${walletAddress}`);
+      console.log(`Wallet loaded: ${walletAddress}`);
 
       if (walletAddress !== order.walletAddress) {
         throw new Error(
@@ -287,7 +286,7 @@ export class TradingBotService {
         throw new Error("Pool not found on DEX");
       }
 
-      console.log(`📊 Found pool: ${pool.totalLiquidity}`);
+      console.log(`📊 Found pool datum: ${pool.address}`);
 
       // Determine reserves
       const assetAStr = String(pool.assetA);

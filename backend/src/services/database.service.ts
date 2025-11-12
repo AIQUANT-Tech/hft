@@ -85,7 +85,7 @@ export class DatabaseService {
         return 0;
       }
 
-      // ✅ FIX: For tokens with 0 decimals, we still need a reasonable amount
+      //  FIX: For tokens with 0 decimals, we still need a reasonable amount
       // Most Cardano tokens use 0 decimals but are divisible into smaller units
       // We'll use 1_000_000 as standard unit (like 1 whole token with 6 implicit decimals)
       const oneTokenInSmallestUnit = BigInt(10 ** Math.max(tokenDecimals, 6));
@@ -210,11 +210,11 @@ export class DatabaseService {
             tvl = 0;
           }
 
-          // ✅ FIXED: Create unique poolId from asset pair
+          // sFIXED: Create unique poolId from asset pair
           const poolId = `${policyId}_${assetName}`;
 
           await PoolToken.upsert({
-            poolId, // ✅ FIXED: Use policyId + assetName as unique ID
+            poolId, // FIXED: Use policyId + assetName as unique ID
             symbol,
             name: symbol,
             policyId,
@@ -294,8 +294,8 @@ export class DatabaseService {
 
   async getTokensByPage(page: number, offset: number, count: number) {
     const tokens = await PoolToken.findAndCountAll({
-      offset: offset,
-      limit: count,
+      // offset: offset,
+      // limit: count,
       order: [["lastUpdated", "DESC"]],
     });
 

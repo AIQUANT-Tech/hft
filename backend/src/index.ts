@@ -13,6 +13,7 @@ import priceHistoryRoutes from "./routes/priceHistory.routes.js";
 import walletRoutes from "./routes/wallet.routes.js";
 import tradingBotRoutes from "./routes/tradingBot.routes.js";
 import strategyRoutes from "./routes/strategy.routes.js";
+import ordersRoutes from "./routes/orders.routes.js";
 import { strategyManager } from "./services/strategyManager.service.js";
 import { databaseService } from "./services/database.service.js";
 import { syncAllPools } from "./jobs/syncPoolsJob.js";
@@ -39,9 +40,7 @@ dotenv.config();
   await TradeOrder.sync();
   console.log("✅ Database connection OK");
 
-  // await PoolToken.sync();
   // await databaseService.initialize();
-
   // setTimeout(() => syncAllPools(), 2000);
   // setInterval(() => syncAllPools(), 2 * 60 * 60 * 1000);
 
@@ -56,6 +55,9 @@ dotenv.config();
   app.use("/api/wallet", walletRoutes);
   app.use("/api/bot", tradingBotRoutes);
   app.use("/api/strategy", strategyRoutes);
+
+  // Register routes
+  app.use("/api/orders", ordersRoutes);
 
   await strategyManager.start();
   await tradingBotService.start();

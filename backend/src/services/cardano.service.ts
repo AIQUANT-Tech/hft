@@ -187,7 +187,7 @@ export class CardanoService {
     }
   }
 
-  static async createWallet(): Promise<string> {
+  static async createWallet(): Promise<{ address: string; mnemonic: string }> {
     try {
       // Initialize Lucid
       const lucid = await this.getLucidInstance();
@@ -225,9 +225,7 @@ export class CardanoService {
         )
       );
 
-      return address;
-
-      return address;
+      return { address, mnemonic };
     } catch (error: any) {
       throw new Error(`Failed to create wallet: ${error.message}`);
     }

@@ -41,7 +41,7 @@ type TradeOrderCreationAttributes = Optional<
   | "errorMessage"
 >;
 
-// ✅ CRITICAL FIX: Use 'declare' for ALL fields
+//  CRITICAL FIX: Use 'declare' for ALL fields
 export class TradeOrder
   extends Model<TradeOrderAttributes, TradeOrderCreationAttributes>
   implements TradeOrderAttributes

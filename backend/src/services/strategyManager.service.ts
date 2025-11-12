@@ -57,7 +57,7 @@ export class StrategyManagerService {
     }
 
     this.strategies.set(config.id, strategy);
-    console.log(`✅ Added PriceTarget strategy: ${config.name}`);
+    console.log(`Added PriceTarget strategy: ${config.name}`);
 
     return config.id;
   }

@@ -1,55 +1,38 @@
-import React, { useState, useEffect, useMemo } from "react";
-import StockCard from "./components/StockCard";
-import SearchBar from "./components/SearchBar";
-import WalletConnect from "./components/WalletConnect";
+// src/App.tsx
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { BrowserWallet } from "@meshsdk/core";
-import {
-  fetchTokens,
-  searchTokens,
-  selectTokens,
-  selectTokensLoading,
-  selectTokensError,
-  selectVerifiedFilter,
-  selectIsSearching,
-  selectSearchQuery,
-  resetSearch,
-  type Token,
-} from "./redux/tokensSlice";
 import { useSelector, useDispatch } from "react-redux";
 import type { AppDispatch, RootState } from "./redux/store";
 import { ConnectWallet } from "./redux/walletSlice";
-import StrategyMonitor from "./components/StrategyMonitor";
+import { selectTheme } from "./redux/themeSlice";
+
+import Navigation from "./components/Navigation";
+import TokensPage from "./pages/TokensPage";
+import WalletManagementPage from "./pages/WalletManagementPage";
+import StrategiesPage from "./pages/StrategiesPage";
+import { Toaster } from "sonner";
+import OrdersPage from "./pages/OrdersPage";
 
 export const WalletContext = React.createContext<BrowserWallet | null>(null);
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
   const { walletId } = useSelector((state: RootState) => state.wallet);
-
-  // Redux state
-  const tokens = useSelector(selectTokens);
-  const loading = useSelector(selectTokensLoading);
-  const error = useSelector(selectTokensError);
-  const showVerifiedOnly = useSelector(selectVerifiedFilter);
-  const isSearching = useSelector(selectIsSearching);
-  const searchQuery = useSelector(selectSearchQuery);
-
-  // Local state
-  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
+  const theme = useSelector(selectTheme);
   const [wallet, setWallet] = useState<BrowserWallet | null>(null);
 
-  // Client-side pagination
-  const itemsPerPage = 12;
-  const [localPage, setLocalPage] = useState(1);
-
-  // Fetch tokens on mount and filter change
+  // ✅ Apply theme with smooth transition
   useEffect(() => {
-    if (!searchQuery) {
-      dispatch(fetchTokens({ onlyVerified: showVerifiedOnly }));
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
     }
-  }, [dispatch, showVerifiedOnly, searchQuery]);
+  }, [theme]);
 
-  // Reconnect wallet
   useEffect(() => {
     reconnectWallet();
   }, [walletId]);
@@ -74,7 +57,6 @@ function App() {
 
       const connectedWallet = await BrowserWallet.enable(walletId);
       const address = (await connectedWallet.getChangeAddress()) || "N/A";
-      // Get Only native balance ADA
       const balances = await connectedWallet.getBalance();
       const lovelaceAsset = balances.find((asset) => asset.unit === "lovelace");
       const adaBalance =
@@ -97,238 +79,73 @@ function App() {
     }
   };
 
-  // Calculate stats
-  const verifiedCount = useMemo(
-    () => tokens.filter((t) => t.is_verified).length,
-    [tokens]
-  );
-  const unverifiedCount = useMemo(
-    () => tokens.filter((t) => !t.is_verified).length,
-    [tokens]
-  );
-
-  // Calculate pagination
-  const totalPages = Math.ceil(tokens.length / itemsPerPage);
-  const currentTokens = useMemo(() => {
-    const startIndex = (localPage - 1) * itemsPerPage;
-    return tokens.slice(startIndex, startIndex + itemsPerPage);
-  }, [tokens, localPage, itemsPerPage]);
-
-  // Reset page on filter change or search
-  useEffect(() => {
-    setLocalPage(1);
-  }, [showVerifiedOnly, searchQuery]);
-
-  // Handle search
-  const handleSearch = (query: string) => {
-    dispatch(searchTokens({ query, onlyVerified: showVerifiedOnly }));
-  };
-
-  // Handle reset
-  const handleReset = () => {
-    dispatch(resetSearch());
-    dispatch(fetchTokens({ onlyVerified: showVerifiedOnly }));
-  };
-
-  // Refresh data
-  const refreshData = () => {
-    if (searchQuery) {
-      dispatch(
-        searchTokens({ query: searchQuery, onlyVerified: showVerifiedOnly })
-      );
-    } else {
-      dispatch(fetchTokens({ onlyVerified: showVerifiedOnly }));
-    }
-  };
-
-  // Pagination handlers
-  const handlePreviousPage = () => {
-    if (localPage > 1) {
-      setLocalPage(localPage - 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-
-  const handleNextPage = () => {
-    if (localPage < totalPages) {
-      setLocalPage(localPage + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-
-  const handlePageClick = (pageNum: number) => {
-    setLocalPage(pageNum);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  // Loading state
-  if (loading && tokens.length === 0 && !searchQuery) {
-    return (
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <header className="text-center mb-10 p-10 bg-linear-to-r from-[#0033AD] to-[#00A3FF] rounded-3xl relative overflow-hidden border border-white/10 shadow-2xl">
-          <h1 className="text-5xl font-black mb-4 bg-clip-text text-transparent bg-linear-to-r from-white to-blue-100">
-            Cardano HFT Dashboard
-          </h1>
-          <p className="text-xl text-white/80 font-light">
-            High-Frequency Trading with Minswap Aggregator
-          </p>
-        </header>
-        <div className="flex flex-col items-center justify-center py-20 text-gray-400 text-xl">
-          <div className="w-12 h-12 border-4 border-transparent border-t-blue-500 rounded-full animate-spin mb-4"></div>
-          <p>
-            Loading {showVerifiedOnly ? "verified" : "all"} tokens from
-            Minswap...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <WalletContext.Provider value={wallet}>
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <header className="text-center mb-10 p-10 bg-linear-to-r from-[#0033AD] to-[#00A3FF] rounded-3xl relative overflow-hidden border border-white/10 shadow-2xl">
-          <div className="flex justify-between items-center flex-wrap gap-6">
-            <div className="text-left">
-              <h1 className="text-5xl font-black mb-4 bg-clip-text text-transparent bg-linear-to-r from-white to-blue-100">
-                Cardano HFT Dashboard
-              </h1>
-              <p className="text-xl text-white/80 font-light">
-                High-Frequency Trading with Minswap Aggregator
-              </p>
-              {tokens.length > 0 && (
-                <div className="text-sm text-white/60 mt-2 space-y-1">
-                  <p>
-                    ✅ {tokens.length} tokens{" "}
-                    {searchQuery && `(search: "${searchQuery}")`} • Page{" "}
-                    {localPage}/{totalPages}
-                  </p>
-                  <p className="text-xs">
-                    {verifiedCount} verified • {unverifiedCount} unverified
-                  </p>
-                </div>
-              )}
-            </div>
-            <WalletConnect />
+      <Router>
+        {/* ✅ Improved background with gradient and pattern */}
+        <div className="min-h-screen transition-colors duration-300 relative overflow-hidden bg-gradient-to-br from-gray-50 via-blue-50 to-cyan-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+          {/* ✅ Subtle animated background pattern */}
+          <div className="absolute inset-0 opacity-30 dark:opacity-10">
+            <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400 dark:bg-purple-500 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl animate-blob"></div>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-400 dark:bg-pink-500 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl animate-blob animation-delay-2000"></div>
+            <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-purple-400 dark:bg-blue-500 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl animate-blob animation-delay-4000"></div>
           </div>
-        </header>
 
-        <StrategyMonitor />
+          {/* ✅ Content wrapper with backdrop blur */}
+          <div className="relative z-10">
+            {/* Navigation - Sticky and Full Width */}
+            <Navigation />
 
-        {error && (
-          <div className="text-center p-5 text-red-400 bg-red-500/10 border border-red-500/20 rounded-2xl mb-6">
-            <p className="font-semibold mb-2">⚠️ Error</p>
-            <p className="text-sm">{error}</p>
-            <button
-              className="mt-4 px-6 py-2 bg-red-500 text-white font-semibold rounded-lg transition-all hover:bg-red-400 hover:scale-105 active:scale-95"
-              onClick={refreshData}
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {/* Search Bar */}
-        <SearchBar
-          onSearch={handleSearch}
-          onReset={handleReset}
-          onRefresh={refreshData}
-          isSearching={isSearching}
-          isRefreshing={loading}
-          totalTokens={tokens.length}
-        />
-
-        {currentTokens.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
-            <p className="text-xl mb-4">
-              {searchQuery
-                ? `No tokens found for "${searchQuery}"`
-                : "No tokens available"}
-            </p>
-            {searchQuery && (
-              <button
-                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-all"
-                onClick={handleReset}
-              >
-                Clear Search
-              </button>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-6">
-              {currentTokens.map((token) => (
-                <div
-                  key={token.token_id}
-                  id={`token-${token.token_id}`}
-                  className={`transition-all duration-300 rounded-2xl cursor-pointer ${
-                    selectedToken?.token_id === token.token_id
-                      ? "ring-4 ring-blue-500 scale-105 shadow-2xl"
-                      : "hover:scale-105 hover:shadow-xl"
-                  }`}
-                  onClick={() => setSelectedToken(token)}
-                >
-                  <StockCard token={token} />
-                </div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 mt-10 flex-wrap">
-                <button
-                  onClick={handlePreviousPage}
-                  disabled={localPage === 1}
-                  className="px-6 py-3 bg-linear-to-r from-gray-700 to-gray-600 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-all"
-                >
-                  ← Previous
-                </button>
-
-                <div className="flex items-center gap-2">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (localPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (localPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = localPage - 2 + i;
-                    }
-
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageClick(pageNum)}
-                        className={`w-10 h-10 rounded-lg font-semibold transition-all ${
-                          localPage === pageNum
-                            ? "bg-linear-to-r from-[#0033AD] to-[#00A3FF] text-white scale-110"
-                            : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:scale-105"
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <button
-                  onClick={handleNextPage}
-                  disabled={localPage === totalPages}
-                  className="px-6 py-3 bg-linear-to-r from-[#0033AD] to-[#00A3FF] text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-all"
-                >
-                  Next →
-                </button>
-
-                <span className="ml-4 text-gray-600 dark:text-gray-400">
-                  Page {localPage} of {totalPages}
-                </span>
+            {/* Main Content with subtle container styling */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+              {/* ✅ Page transition wrapper */}
+              <div className="animate-fadeIn">
+                <Routes>
+                  <Route path="/" element={<TokensPage />} />
+                  <Route path="/wallets" element={<WalletManagementPage />} />
+                  <Route path="/strategies" element={<StrategiesPage />} />
+                  <Route path="/orders" element={<OrdersPage />} />
+                </Routes>
               </div>
-            )}
-          </>
-        )}
-      </div>
+            </main>
+
+            {/* ✅ Footer (optional, adds professional touch) */}
+            <footer className="mt-12 py-6 text-center text-sm text-gray-600 dark:text-slate-400 border-t border-gray-200 dark:border-slate-800">
+              <p>
+                Cardano HFT Platform • Powered by{" "}
+                <span className="font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+                  Minswap
+                </span>{" "}
+                • Built on{" "}
+                <span className="font-semibold text-blue-600 dark:text-purple-400">
+                  Cardano
+                </span>
+              </p>
+            </footer>
+          </div>
+        </div>
+
+        {/* Toaster with theme support and custom styling */}
+        <Toaster
+          theme={theme}
+          position="top-right"
+          richColors
+          closeButton
+          toastOptions={{
+            className: "backdrop-blur-md",
+            style: {
+              background:
+                theme === "dark"
+                  ? "rgba(15, 23, 42, 0.9)"
+                  : "rgba(255, 255, 255, 0.9)",
+              border:
+                theme === "dark"
+                  ? "1px solid rgba(148, 163, 184, 0.2)"
+                  : "1px solid rgba(229, 231, 235, 1)",
+            },
+          }}
+        />
+      </Router>
     </WalletContext.Provider>
   );
 }

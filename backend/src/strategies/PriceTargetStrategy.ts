@@ -55,6 +55,8 @@ export class PriceTargetStrategy extends BaseStrategy {
     return true;
   }
 
+  // src/strategies/PriceTargetStrategy.ts
+
   async execute(): Promise<void> {
     try {
       if (!this.config.isActive) {
@@ -63,13 +65,7 @@ export class PriceTargetStrategy extends BaseStrategy {
 
       await this.updateCurrentPrice();
 
-      console.log("Working upto here");
-
-      if (this.strategyConfig.executeOnce && this.orderCreated) {
-        return;
-      }
-      console.log("Working upto here!");
-
+      // ✅ Check if order exists and is completed
       if (this.orderId) {
         const order = await TradeOrder.findByPk(this.orderId);
 
@@ -79,6 +75,7 @@ export class PriceTargetStrategy extends BaseStrategy {
               `✅ Order ${this.orderId} completed at ${order.executedPrice}`
             );
 
+            // ✅ Stop strategy if executeOnce is true
             if (this.strategyConfig.executeOnce) {
               this.config.isActive = false;
               this.log("🛑 Strategy stopped (executeOnce mode)");
@@ -86,38 +83,35 @@ export class PriceTargetStrategy extends BaseStrategy {
               this.orderId = undefined;
               this.orderCreated = false;
             }
-            return;
+            return; // ✅ Exit here to prevent further execution
           }
 
           if (order.status === "pending") {
-            if (order.currentPrice) {
-              this.currentPrice = order.currentPrice;
-            }
-
-            const diff = Math.abs(
-              this.currentPrice! - this.strategyConfig.targetPrice
-            );
-            const pct = (diff / this.strategyConfig.targetPrice) * 100;
-            this.log(
-              `⏳ Waiting: Current ${this.currentPrice!.toFixed(
-                6
-              )} | Target ${this.strategyConfig.targetPrice.toFixed(
-                6
-              )} (${pct.toFixed(2)}% away)`
-            );
+            // Strategy is waiting, don't do anything
             return;
           }
 
           if (order.status === "failed") {
             this.log(`❌ Order ${this.orderId} failed: ${order.errorMessage}`);
+
+            // ✅ Reset order tracking
             this.orderId = undefined;
             this.orderCreated = false;
-            return;
+
+            // ✅ Stop if executeOnce
+            if (this.strategyConfig.executeOnce) {
+              this.config.isActive = false;
+              this.log("🛑 Strategy stopped after failure (executeOnce mode)");
+              return;
+            }
           }
         }
       }
 
-      await this.createNewOrder();
+      // ✅ Only create new order if none exists
+      if (!this.orderCreated) {
+        await this.createNewOrder();
+      }
     } catch (error) {
       this.log(`❌ Error executing strategy: ${(error as Error).message}`);
     }
