@@ -20,6 +20,7 @@
 /backend/.gitignore
 /backend/package-lock.json
 /backend/pnpm-lock.yml
+/backend/wallets*
 
 # Ignore .vscode file
 /.vscode/

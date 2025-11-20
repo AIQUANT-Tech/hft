@@ -37,6 +37,9 @@ export abstract class BaseStrategy {
     if (!poolId) {
       throw new Error("Pool ID is required for creating orders");
     }
+    const priceStr = orderData.targetPrice.toFixed(20); // Use high precision
+    // Remove trailing zeros
+    orderData.targetPrice = Number(priceStr.replace(/\.?0+$/, ""));
 
     return await tradingBotService.createOrder({
       walletAddress: this.config.walletAddress,

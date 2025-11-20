@@ -85,8 +85,8 @@ export default function CreateStrategyForm() {
   return (
     <div
       className={`rounded-2xl p-6 shadow-lg border ${isDark
-        ? "bg-gradient-to-br from-slate-900 to-slate-800 border-white/10 shadow-slate-900/50"
-        : "bg-gradient-to-br from-white to-gray-50 border-gray-300"
+        ? "bg-linear-to-br from-slate-900 to-slate-800 border-white/10 shadow-slate-900/50"
+        : "bg-linear-to-br from-white to-gray-50 border-gray-300"
         }`}
     >
       <h3
@@ -103,7 +103,7 @@ export default function CreateStrategyForm() {
             key={strategy.type}
             onClick={() => setSelectedStrategy(strategy.type)}
             className={`relative p-6 rounded-2xl border-2 transition-all hover:scale-105 ${selectedStrategy === strategy.type
-              ? `bg-gradient-to-br ${strategy.color} border-transparent text-white shadow-xl`
+              ? `bg-linear-to-br ${strategy.color} border-transparent text-white shadow-xl`
               : isDark
                 ? "bg-slate-800 border-white/10 text-white hover:border-white/20"
                 : "bg-white border-gray-200 text-gray-900 hover:border-gray-300"

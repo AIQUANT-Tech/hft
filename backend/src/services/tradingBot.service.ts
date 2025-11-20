@@ -1,7 +1,6 @@
 // src/services/tradingBot.service.ts
 
 import { TradeOrder } from "../models/tradeOrder.model.js";
-import { PoolToken } from "../models/token.model.js";
 import {
   BlockfrostAdapter,
   NetworkId,
@@ -17,10 +16,9 @@ import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import { Lucid, Blockfrost, Data } from "lucid-cardano";
 import environment from "../config/environment.js";
 import { EncryptionUtil } from "../utils/encryption.util.js";
-import { logger } from "./logger.service.js"; // ✅ Import logger
-import Big from "big.js";
+import { logger } from "./logger.service.js"; // Import logger
 import fs from "fs";
-import path from "path";
+import path, { parse } from "path";
 import { PriceUtil } from "../utils/price.util.js";
 
 const blockfrostAPI = new BlockFrostAPI({
@@ -118,8 +116,11 @@ export class TradingBotService {
         );
         return;
       }
+      const priceStr = currentPrice.toFixed(20); // Use high precision
+      // Remove trailing zeros
+      const trimmed = priceStr.replace(/\.?0+$/, "");
 
-      await order.update({ currentPrice });
+      await order.update({ currentPrice: Number(trimmed) });
 
       const conditionMet = order.triggerAbove
         ? currentPrice > Number(order.targetPrice)
@@ -156,7 +157,7 @@ export class TradingBotService {
 
       await order.update({
         status: "completed",
-        executedPrice: currentPrice,
+        executedPrice: Number(trimmed),
         executedAt: new Date(),
         txHash: txHash,
       });
@@ -175,41 +176,6 @@ export class TradingBotService {
         "order"
       );
       throw error;
-    }
-  }
-
-  private async getCurrentPrice(poolId: string): Promise<number | null> {
-    try {
-      const pool = await blockfrostAdapter.getV1PoolById({ id: poolId });
-
-      if (!pool) {
-        logger.warning(`Pool ${poolId} not found on DEX`, undefined, "order");
-        return null;
-      }
-
-      const [priceA, priceB] = await blockfrostAdapter.getV1PoolPrice({
-        pool,
-        decimalsA: 1_000_000,
-      });
-
-      const isAAda = pool.assetA === "lovelace" || pool.assetA === "";
-      const isBAda = pool.assetB === "lovelace" || pool.assetB === "";
-
-      // ✅ FIX: Divide by 1,000,000 to convert lovelace to ADA
-      if (isAAda && !isBAda) {
-        return Number(priceB.toString());
-      } else if (isBAda && !isAAda) {
-        return Number(priceA.toString());
-      }
-
-      return null;
-    } catch (error) {
-      logger.error(
-        `Error fetching price: ${(error as Error).message}`,
-        undefined,
-        "order"
-      );
-      return null;
     }
   }
 

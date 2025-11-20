@@ -2,11 +2,12 @@
 
 import { Router } from "express";
 import { TradeOrder } from "../models/tradeOrder.model.js";
+import { authenticateJWT } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
-// GET /api/orders - Get all orders
-router.get("/", async (req, res) => {
+// GET /api/orders - Get all orders for specific user
+router.get("/", authenticateJWT, async (req, res) => {
   try {
     const orders = await TradeOrder.findAll({
       order: [["createdAt", "DESC"]],
@@ -26,7 +27,7 @@ router.get("/", async (req, res) => {
 });
 
 // GET /api/orders/:id - Get single order
-router.get("/:id", async (req, res) => {
+router.get("/:id", authenticateJWT, async (req, res) => {
   try {
     const order = await TradeOrder.findByPk(req.params.id);
 
@@ -51,7 +52,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // DELETE /api/orders/:id - Delete order
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authenticateJWT, async (req, res) => {
   try {
     const order = await TradeOrder.findByPk(req.params.id);
 

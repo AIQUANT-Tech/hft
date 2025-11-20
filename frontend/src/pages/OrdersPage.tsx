@@ -5,6 +5,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import { selectIsDark } from "@/redux/themeSlice";
+import { selectAuth } from "@/redux/authSlice";
 
 const API_URL = "http://localhost:8080";
 
@@ -29,6 +30,7 @@ interface Order {
 
 export default function OrdersPage() {
   const isDark = useSelector(selectIsDark);
+  const { isAuthenticated, user } = useSelector(selectAuth);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<
@@ -39,13 +41,14 @@ export default function OrdersPage() {
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => {
-    fetchOrders();
-
-    if (autoRefresh) {
-      const interval = setInterval(fetchOrders, 5000);
-      return () => clearInterval(interval);
+    if (isAuthenticated && user) {
+      fetchOrders();
+      if (autoRefresh) {
+        const interval = setInterval(fetchOrders, 5000);
+        return () => clearInterval(interval);
+      }
     }
-  }, [autoRefresh]);
+  }, [isAuthenticated, user, autoRefresh]);
 
   const formatPrice = (price: number | string | undefined): string => {
     if (price === undefined || price === null) return "0.000000";
@@ -62,7 +65,9 @@ export default function OrdersPage() {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/orders`);
+      const response = await axios.get(`${API_URL}/api/orders`, {
+        withCredentials: true,
+      });
       if (response.data.success) {
         setOrders(response.data.orders || []);
       }
@@ -78,7 +83,9 @@ export default function OrdersPage() {
     if (!orderToDelete) return;
 
     try {
-      await axios.delete(`${API_URL}/api/orders/${orderToDelete}`);
+      await axios.delete(`${API_URL}/api/orders/${orderToDelete}`, {
+        withCredentials: true,
+      });
       toast.success("Order deleted successfully");
       setShowDeleteModal(false);
       setOrderToDelete(null);
@@ -129,10 +136,26 @@ export default function OrdersPage() {
     );
   };
 
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="text-center py-20">
+        <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 ${isDark ? "bg-slate-800" : "bg-gray-100"}`}>
+          <span className="text-5xl">🔑</span>
+        </div>
+        <h3 className={`text-2xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
+          Connect Your Wallet
+        </h3>
+        <p className={`text-sm ${isDark ? "text-gray-200" : "text-gray-600"}`}>
+          Please connect your browser wallet to see and manage your orders.
+        </p>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+        <h1 className={`text-3xl font-bold bg-linear-to-r bg-clip-text text-transparent ${isDark ? "from-blue-200 to-cyan-200" : "from-blue-600 to-cyan-600"}`}>
           Trade Orders
         </h1>
         <div
@@ -157,11 +180,11 @@ export default function OrdersPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+          <h1 className={`text-3xl font-bold bg-linear-to-r bg-clip-text text-transparent ${isDark ? "from-blue-200 to-cyan-400" : "from-blue-600 to-cyan-600"}`}>
             Trade Orders
           </h1>
           <p
-            className={`text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-600"
+            className={`text-sm mt-1 ${isDark ? "text-gray-200" : "text-gray-600"
               }`}
           >
             Manage and track your trading orders
@@ -229,235 +252,239 @@ export default function OrdersPage() {
       </div>
 
       {/* Orders List */}
-      {filteredOrders.length === 0 ? (
-        <div
-          className={`rounded-2xl p-12 shadow-lg border text-center ${isDark
-            ? "bg-gray-800 border-white/10"
-            : "bg-white border-gray-200"
-            }`}
-        >
+      {
+        filteredOrders.length === 0 ? (
           <div
-            className={`w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 ${isDark ? "bg-slate-700" : "bg-gray-100"
+            className={`rounded-2xl p-12 shadow-lg border text-center ${isDark
+              ? "bg-gray-800 border-white/10"
+              : "bg-white border-gray-200"
               }`}
           >
-            <span className="text-5xl">📋</span>
-          </div>
-          <h3
-            className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"
-              }`}
-          >
-            No {filter !== "all" ? filter : ""} orders found
-          </h3>
-          <p className={isDark ? "text-gray-400" : "text-gray-600"}>
-            {filter === "all"
-              ? "Create a strategy to start trading"
-              : `No orders with status "${filter}"`}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredOrders.map((order) => (
             <div
-              key={order.id}
-              className={`rounded-2xl shadow-lg p-6 border hover:shadow-xl transition-all ${isDark
-                ? "bg-linear-to-br from-gray-800 to-gray-900 border-white/10"
-                : "bg-linear-to-br from-white to-gray-50 border-gray-200"
+              className={`w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 ${isDark ? "bg-slate-700" : "bg-gray-100"
                 }`}
             >
-              {/* Order Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-linear-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center text-white font-bold shadow-lg">
-                    <span className="text-2xl">
-                      {order.isBuy ? "📈" : "📉"}
-                    </span>
+              <span className="text-5xl">📋</span>
+            </div>
+            <h3
+              className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"
+                }`}
+            >
+              No {filter !== "all" ? filter : ""} orders found
+            </h3>
+            <p className={isDark ? "text-gray-400" : "text-gray-600"}>
+              {filter === "all"
+                ? "Create a strategy to start trading"
+                : `No orders with status "${filter}"`}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredOrders.map((order) => (
+              <div
+                key={order.id}
+                className={`rounded-2xl shadow-lg p-6 border hover:shadow-xl transition-all ${isDark
+                  ? "bg-linear-to-br from-gray-800 to-gray-900 border-white/10"
+                  : "bg-linear-to-br from-white to-gray-50 border-gray-200"
+                  }`}
+              >
+                {/* Order Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-linear-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center text-white font-bold shadow-lg">
+                      <span className="text-2xl">
+                        {order.isBuy ? "📈" : "📉"}
+                      </span>
+                    </div>
+                    <div>
+                      <h3
+                        className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"
+                          }`}
+                      >
+                        {order.isBuy ? "BUY" : "SELL"} {order.tradingPair}
+                      </h3>
+                      <p
+                        className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"
+                          }`}
+                      >
+                        Order ID: {order.id.substring(0, 8)}...
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3
-                      className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"
-                        }`}
-                    >
-                      {order.isBuy ? "BUY" : "SELL"} {order.tradingPair}
-                    </h3>
-                    <p
-                      className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"
-                        }`}
-                    >
-                      Order ID: {order.id.substring(0, 8)}...
+
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(order.status)}
+
+                    {(order.status === "pending" ||
+                      order.status === "failed") && (
+                        <button
+                          onClick={() => {
+                            setOrderToDelete(order.id);
+                            setShowDeleteModal(true);
+                          }}
+                          className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold transition-all hover:scale-105 shadow-md"
+                        >
+                          🗑️ Delete
+                        </button>
+                      )}
+                  </div>
+                </div>
+
+                {/* Order Details Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-500/10 dark:to-emerald-500/10 rounded-xl p-4 border border-green-200 dark:border-green-500/30">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                      Amount
+                    </p>
+                    <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                      {formatAmount(order.amount)}{" "}
+                      {order.tradingPair.split("-")[0]}
+                    </p>
+                  </div>
+
+                  <div className="bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-500/10 dark:to-cyan-500/10 rounded-xl p-4 border border-blue-200 dark:border-blue-500/30">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                      Target Price
+                    </p>
+                    <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                      ₳{formatPrice(order.targetPrice)}
+                    </p>
+                  </div>
+
+                  <div className="bg-linear-to-br from-yellow-50 to-orange-50 dark:from-yellow-500/10 dark:to-orange-500/10 rounded-xl p-4 border border-yellow-200 dark:border-yellow-500/30">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                      Current Price
+                    </p>
+                    <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
+                      ₳{formatPrice(order.currentPrice)}
+                    </p>
+                  </div>
+
+                  <div className="bg-linear-to-br from-purple-50 to-pink-50 dark:from-purple-500/10 dark:to-pink-500/10 rounded-xl p-4 border border-purple-200 dark:border-purple-500/30">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                      Created
+                    </p>
+                    <p className="text-sm font-bold text-purple-600 dark:text-purple-400">
+                      {new Date(order.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {getStatusBadge(order.status)}
-
-                  {(order.status === "pending" ||
-                    order.status === "failed") && (
-                      <button
-                        onClick={() => {
-                          setOrderToDelete(order.id);
-                          setShowDeleteModal(true);
-                        }}
-                        className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold transition-all hover:scale-105 shadow-md"
-                      >
-                        🗑️ Delete
-                      </button>
-                    )}
-                </div>
-              </div>
-
-              {/* Order Details Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div className="bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-500/10 dark:to-emerald-500/10 rounded-xl p-4 border border-green-200 dark:border-green-500/30">
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                    Amount
-                  </p>
-                  <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                    {formatAmount(order.amount)}{" "}
-                    {order.tradingPair.split("-")[0]}
-                  </p>
-                </div>
-
-                <div className="bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-500/10 dark:to-cyan-500/10 rounded-xl p-4 border border-blue-200 dark:border-blue-500/30">
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                    Target Price
-                  </p>
-                  <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                    ₳{formatPrice(order.targetPrice)}
-                  </p>
-                </div>
-
-                <div className="bg-linear-to-br from-yellow-50 to-orange-50 dark:from-yellow-500/10 dark:to-orange-500/10 rounded-xl p-4 border border-yellow-200 dark:border-yellow-500/30">
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                    Current Price
-                  </p>
-                  <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
-                    ₳{formatPrice(order.currentPrice)}
-                  </p>
-                </div>
-
-                <div className="bg-linear-to-br from-purple-50 to-pink-50 dark:from-purple-500/10 dark:to-pink-500/10 rounded-xl p-4 border border-purple-200 dark:border-purple-500/30">
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                    Created
-                  </p>
-                  <p className="text-sm font-bold text-purple-600 dark:text-purple-400">
-                    {new Date(order.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-
-              {/* Execution Details */}
-              {order.status === "completed" && order.txHash && (
-                <div className="bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-500/10 dark:to-emerald-500/10 rounded-xl p-4 border border-green-200 dark:border-green-500/30">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                        Executed Price
-                      </p>
-                      <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                        ₳{formatPrice(order.executedPrice)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                        Transaction Hash
-                      </p>
-                      <a
-                        href={`https://preprod.cardanoscan.io/transaction/${order.txHash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-mono text-blue-600 dark:text-blue-400 hover:underline break-all"
-                      >
-                        {order.txHash.substring(0, 16)}...
-                      </a>
+                {/* Execution Details */}
+                {order.status === "completed" && order.txHash && (
+                  <div className="bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-500/10 dark:to-emerald-500/10 rounded-xl p-4 border border-green-200 dark:border-green-500/30">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                          Executed Price
+                        </p>
+                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                          ₳{formatPrice(order.executedPrice)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                          Transaction Hash
+                        </p>
+                        <a
+                          href={`https://preprod.cardanoscan.io/transaction/${order.txHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-mono text-blue-600 dark:text-blue-400 hover:underline break-all"
+                        >
+                          {order.txHash.substring(0, 16)}...
+                        </a>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Error Message */}
-              {order.status === "failed" && order.errorMessage && (
-                <div className="bg-linear-to-r from-red-50 to-pink-50 dark:from-red-500/10 dark:to-pink-500/10 rounded-xl p-4 border border-red-200 dark:border-red-500/30">
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                    Error Message
-                  </p>
-                  <p className="text-sm text-red-600 dark:text-red-400">
-                    {order.errorMessage}
-                  </p>
-                </div>
-              )}
+                {/* Error Message */}
+                {order.status === "failed" && order.errorMessage && (
+                  <div className="bg-linear-to-r from-red-50 to-pink-50 dark:from-red-500/10 dark:to-pink-500/10 rounded-xl p-4 border border-red-200 dark:border-red-500/30">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                      Error Message
+                    </p>
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      {order.errorMessage}
+                    </p>
+                  </div>
+                )}
 
-              {/* Wallet Info */}
-              <div
-                className={`mt-4 pt-4 border-t ${isDark ? "border-gray-700" : "border-gray-200"
-                  }`}
-              >
-                <p
-                  className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"
+                {/* Wallet Info */}
+                <div
+                  className={`mt-4 pt-4 border-t ${isDark ? "border-gray-700" : "border-gray-200"
                     }`}
                 >
-                  Wallet:{" "}
-                  <span className="font-mono">
-                    {order.walletAddress.substring(0, 20)}...
-                  </span>
-                </p>
+                  <p
+                    className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"
+                      }`}
+                  >
+                    Wallet:{" "}
+                    <span className="font-mono">
+                      {order.walletAddress.substring(0, 20)}...
+                    </span>
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )
+      }
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && orderToDelete && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div
-            className={`rounded-2xl p-8 max-w-md w-full border shadow-2xl ${isDark
-              ? "bg-slate-900 border-white/10"
-              : "bg-white border-gray-300"
-              }`}
-          >
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-red-100 dark:bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-4xl">⚠️</span>
+      {
+        showDeleteModal && orderToDelete && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div
+              className={`rounded-2xl p-8 max-w-md w-full border shadow-2xl ${isDark
+                ? "bg-slate-900 border-white/10"
+                : "bg-white border-gray-300"
+                }`}
+            >
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-4xl">⚠️</span>
+                </div>
+                <h3
+                  className={`text-2xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"
+                    }`}
+                >
+                  Delete Order?
+                </h3>
+                <p
+                  className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
+                >
+                  This action cannot be undone. The order will be permanently
+                  removed.
+                </p>
               </div>
-              <h3
-                className={`text-2xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"
-                  }`}
-              >
-                Delete Order?
-              </h3>
-              <p
-                className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"
-                  }`}
-              >
-                This action cannot be undone. The order will be permanently
-                removed.
-              </p>
-            </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setOrderToDelete(null);
-                }}
-                className={`flex-1 px-6 py-3 font-semibold rounded-xl transition-all ${isDark
-                  ? "bg-gray-700 hover:bg-gray-600 text-white"
-                  : "bg-gray-200 hover:bg-gray-300 text-gray-900"
-                  }`}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={deleteOrder}
-                className="flex-1 px-6 py-3 bg-linear-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-semibold rounded-xl transition-all hover:scale-105 shadow-lg shadow-red-500/30"
-              >
-                Delete Order
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setOrderToDelete(null);
+                  }}
+                  className={`flex-1 px-6 py-3 font-semibold rounded-xl transition-all ${isDark
+                    ? "bg-gray-700 hover:bg-gray-600 text-white"
+                    : "bg-gray-200 hover:bg-gray-300 text-gray-900"
+                    }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={deleteOrder}
+                  className="flex-1 px-6 py-3 bg-linear-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-semibold rounded-xl transition-all hover:scale-105 shadow-lg shadow-red-500/30"
+                >
+                  Delete Order
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 }

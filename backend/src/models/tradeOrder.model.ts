@@ -70,6 +70,7 @@ export class TradeOrder
   declare errorMessage?: string;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
+  declare orderAddress: string;
   declare executedAt?: Date;
 }
 

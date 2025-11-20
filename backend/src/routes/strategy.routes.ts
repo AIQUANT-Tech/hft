@@ -7,8 +7,6 @@ import { BlockfrostAdapter, NetworkId, Asset } from "@minswap/sdk";
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import environment from "../config/environment.js";
 import { randomUUID } from "crypto";
-import Big from "big.js";
-import { TradeOrder } from "../models/tradeOrder.model.js";
 import { authenticateJWT, AuthRequest } from "../middleware/auth.middleware.js";
 import { CardanoService } from "../services/cardano.service.js";
 import { ACAConfig } from "../strategies/ACAStrategy.js";

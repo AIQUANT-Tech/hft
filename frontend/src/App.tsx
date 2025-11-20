@@ -104,22 +104,21 @@ function App() {
   return (
     <WalletContext.Provider value={wallet}>
       <Router>
-        {/* ✅ Improved background with gradient and pattern */}
+        {/* Improved background with gradient and pattern */}
         <div
-          className={`min-h-screen transition-colors duration-300 relative overflow-hidden bg-linear-to-br ${
-            isDark
-              ? "from-slate-950 via-slate-900 to-slate-950"
-              : "from-gray-50 via-blue-50 to-cyan-50"
-          } `}
+          className={`min-h-screen transition-colors duration-300 relative overflow-hidden bg-linear-to-br ${isDark
+            ? "from-slate-950 via-slate-900 to-slate-950"
+            : "from-gray-50 via-blue-50 to-cyan-50"
+            } `}
         >
-          {/* ✅ Subtle animated background pattern */}
+          {/* Subtle animated background pattern */}
           <div className="absolute inset-0 opacity-30 dark:opacity-10">
             <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400 dark:bg-purple-500 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl animate-blob"></div>
             <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-400 dark:bg-pink-500 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl animate-blob animation-delay-2000"></div>
             <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-purple-400 dark:bg-blue-500 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl animate-blob animation-delay-4000"></div>
           </div>
 
-          {/* ✅ Content wrapper with backdrop blur */}
+          {/* Content wrapper with backdrop blur */}
           <div className="relative z-10">
             {/* Navigation - Sticky and Full Width */}
             <Navigation />
@@ -128,7 +127,7 @@ function App() {
             <main
               className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8`}
             >
-              {/* ✅ Page transition wrapper */}
+              {/* Page transition wrapper */}
               <div className="animate-fadeIn">
                 <Routes>
                   <Route path="/" element={<TokensPage />} />
