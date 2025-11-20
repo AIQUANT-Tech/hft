@@ -14,38 +14,62 @@ import walletRoutes from "./routes/wallet.routes.js";
 import tradingBotRoutes from "./routes/tradingBot.routes.js";
 import strategyRoutes from "./routes/strategy.routes.js";
 import ordersRoutes from "./routes/orders.routes.js";
+import authRoutes from "./routes/auth.routes.js";
 import { strategyManager } from "./services/strategyManager.service.js";
 import { databaseService } from "./services/database.service.js";
 import { syncAllPools } from "./jobs/syncPoolsJob.js";
 import { tradingBotService } from "./services/tradingBot.service.js";
 import { TradeOrder } from "./models/tradeOrder.model.js";
+import environment from "./config/environment.js";
+import User from "./models/user.model.js";
+import cookieParser from "cookie-parser";
+import { logger } from "./services/logger.service.js";
 
 dotenv.config();
 
 (async () => {
   const app: Application = express();
-  const PORT = process.env.PORT || 8080;
+  const PORT = environment.PORT || 8080;
 
   const httpServer = createServer(app);
+
+  // FIX: Proper Socket.IO CORS configuration
   const io = new SocketIOServer(httpServer, {
     cors: {
-      origin: "*",
+      origin: ["http://localhost:3000", "http://localhost:5173"],
       methods: ["GET", "POST"],
+      credentials: true,
     },
+    // Add these options to prevent reconnection loops
+    pingTimeout: 60000, // 60 seconds
+    pingInterval: 25000, // 25 seconds
+    transports: ["websocket", "polling"], // Prefer websocket
   });
 
+  // ✅ Initialize logger with WebSocket
+  logger.setSocketIO(io);
+
   await sequelize.authenticate();
-  // Sync both models
   await PoolToken.sync();
   await TradeOrder.sync();
+  await User.sync();
   console.log("✅ Database connection OK");
 
   // await databaseService.initialize();
   // setTimeout(() => syncAllPools(), 2000);
   // setInterval(() => syncAllPools(), 2 * 60 * 60 * 1000);
 
-  // Middleware
-  app.use(cors());
+  app.use(cookieParser());
+
+  app.use(
+    cors({
+      origin: ["http://localhost:3000", "http://localhost:5173"],
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  );
+
   app.use(express.json());
 
   // Routes
@@ -55,22 +79,30 @@ dotenv.config();
   app.use("/api/wallet", walletRoutes);
   app.use("/api/bot", tradingBotRoutes);
   app.use("/api/strategy", strategyRoutes);
-
-  // Register routes
+  app.use("/api/auth", authRoutes);
   app.use("/api/orders", ordersRoutes);
 
   await strategyManager.start();
   await tradingBotService.start();
 
+  // FIX: Better socket connection handling
   io.on("connection", (socket) => {
     console.log(`✅ Client connected: ${socket.id}`);
 
-    socket.on("disconnect", () => {
-      console.log(`❌ Client disconnected: ${socket.id}`);
+    // Send log history immediately on connect
+    socket.emit("log:history", logger.getHistory());
+
+    socket.on("disconnect", (reason) => {
+      console.log(`❌ Client disconnected: ${socket.id}, reason: ${reason}`);
+    });
+
+    // Handle errors
+    socket.on("error", (error) => {
+      console.error(`Socket error for ${socket.id}:`, error);
     });
   });
 
-  // ✅ FIX: Use database instead of tokenService
+  // Broadcast strategies update
   setInterval(async () => {
     try {
       const strategies = strategyManager.getAllStrategies();
@@ -86,7 +118,6 @@ dotenv.config();
               const policyId = config.baseToken?.split(".")[0];
 
               if (policyId) {
-                // ✅ FIXED: Query database directly (NO pool scanning)
                 const poolToken = await PoolToken.findOne({
                   where: { policyId },
                 });
@@ -113,21 +144,19 @@ dotenv.config();
                       status: {
                         ...status,
                         currentPrice: currentPrice,
-                        currentPriceFormatted: `${currentPrice.toFixed(6)} ADA`,
+                        currentPriceFormatted: `${currentPrice} ADA`,
                         targetPrice: targetPrice,
-                        targetPriceFormatted: `${targetPrice.toFixed(6)} ADA`,
+                        targetPriceFormatted: `${targetPrice} ADA`,
                         priceDifference: priceDiff,
                         priceDifferenceFormatted: `${
                           priceDiff > 0 ? "+" : ""
-                        }${priceDiff.toFixed(6)} (${
+                        }${priceDiff} (${
                           priceDiff > 0 ? "+" : ""
-                        }${priceDiffPct.toFixed(2)}%)`,
+                        }${priceDiffPct}%)`,
                         distanceToTarget: Math.abs(priceDiff),
                         distanceToTargetFormatted: `${Math.abs(
                           priceDiff
-                        ).toFixed(6)} ADA (${Math.abs(priceDiffPct).toFixed(
-                          2
-                        )}%)`,
+                        )} ADA (${Math.abs(priceDiffPct)}%)`,
                         conditionMet: conditionMet,
                         conditionMetFormatted: conditionMet
                           ? "✅ YES"

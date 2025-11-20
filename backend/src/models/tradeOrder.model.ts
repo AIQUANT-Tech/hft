@@ -20,6 +20,7 @@ export interface TradeOrderAttributes {
     | "completed"
     | "failed"
     | "cancelled";
+  poolId: string;
   currentPrice?: number;
   executedPrice?: number;
   txHash?: string;
@@ -62,6 +63,7 @@ export class TradeOrder
     | "completed"
     | "failed"
     | "cancelled";
+  declare poolId: string;
   declare currentPrice?: number;
   declare executedPrice?: number;
   declare txHash?: string;
@@ -138,6 +140,10 @@ TradeOrder.init(
       ),
       defaultValue: "pending",
       allowNull: false,
+    },
+    poolId: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     currentPrice: {
       type: DataTypes.DECIMAL(20, 8),

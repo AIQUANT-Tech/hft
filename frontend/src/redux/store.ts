@@ -20,6 +20,7 @@ import {
 import themeReducer from "./themeSlice";
 import storage from "redux-persist/lib/storage";
 import storageSession from "redux-persist/lib/storage/session";
+import authReducer from "./authSlice";
 
 // Wallet persist config
 const walletPersistConfig = {
@@ -50,6 +51,7 @@ const rootReducer = combineReducers({
   tokens: persistedTokensReducer,
   price: priceReducer,
   theme: themeReducer,
+  auth: authReducer,
 });
 
 export const store = configureStore({

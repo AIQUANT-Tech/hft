@@ -5,7 +5,7 @@ import { BrowserWallet } from "@meshsdk/core";
 import { useSelector, useDispatch } from "react-redux";
 import type { AppDispatch, RootState } from "./redux/store";
 import { ConnectWallet } from "./redux/walletSlice";
-import { selectTheme } from "./redux/themeSlice";
+import { selectIsDark, selectTheme } from "./redux/themeSlice";
 
 import Navigation from "./components/Navigation";
 import TokensPage from "./pages/TokensPage";
@@ -13,6 +13,8 @@ import WalletManagementPage from "./pages/WalletManagementPage";
 import StrategiesPage from "./pages/StrategiesPage";
 import { Toaster } from "sonner";
 import OrdersPage from "./pages/OrdersPage";
+import { fetchCurrentUser } from "./redux/authSlice";
+import Footer from "./components/Footer";
 
 export const WalletContext = React.createContext<BrowserWallet | null>(null);
 
@@ -21,6 +23,14 @@ function App() {
   const { walletId } = useSelector((state: RootState) => state.wallet);
   const theme = useSelector(selectTheme);
   const [wallet, setWallet] = useState<BrowserWallet | null>(null);
+  const isDark = useSelector(selectIsDark);
+
+  const { loading: authLoading } = useSelector(
+    (state: RootState) => state.auth
+  ); // ✅ Add auth state
+  useEffect(() => {
+    dispatch(fetchCurrentUser());
+  }, [dispatch]);
 
   // ✅ Apply theme with smooth transition
   useEffect(() => {
@@ -79,11 +89,29 @@ function App() {
     }
   };
 
+  // ✅ Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 via-blue-50 to-cyan-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-transparent border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <WalletContext.Provider value={wallet}>
       <Router>
         {/* ✅ Improved background with gradient and pattern */}
-        <div className="min-h-screen transition-colors duration-300 relative overflow-hidden bg-gradient-to-br from-gray-50 via-blue-50 to-cyan-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+        <div
+          className={`min-h-screen transition-colors duration-300 relative overflow-hidden bg-linear-to-br ${
+            isDark
+              ? "from-slate-950 via-slate-900 to-slate-950"
+              : "from-gray-50 via-blue-50 to-cyan-50"
+          } `}
+        >
           {/* ✅ Subtle animated background pattern */}
           <div className="absolute inset-0 opacity-30 dark:opacity-10">
             <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400 dark:bg-purple-500 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl animate-blob"></div>
@@ -97,7 +125,9 @@ function App() {
             <Navigation />
 
             {/* Main Content with subtle container styling */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+            <main
+              className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8`}
+            >
               {/* ✅ Page transition wrapper */}
               <div className="animate-fadeIn">
                 <Routes>
@@ -109,19 +139,7 @@ function App() {
               </div>
             </main>
 
-            {/* ✅ Footer (optional, adds professional touch) */}
-            <footer className="mt-12 py-6 text-center text-sm text-gray-600 dark:text-slate-400 border-t border-gray-200 dark:border-slate-800">
-              <p>
-                Cardano HFT Platform • Powered by{" "}
-                <span className="font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
-                  Minswap
-                </span>{" "}
-                • Built on{" "}
-                <span className="font-semibold text-blue-600 dark:text-purple-400">
-                  Cardano
-                </span>
-              </p>
-            </footer>
+            <Footer />
           </div>
         </div>
 

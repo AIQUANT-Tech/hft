@@ -9,6 +9,12 @@ import environment from "../config/environment.js";
 import { randomUUID } from "crypto";
 import Big from "big.js";
 import { TradeOrder } from "../models/tradeOrder.model.js";
+import { authenticateJWT, AuthRequest } from "../middleware/auth.middleware.js";
+import { CardanoService } from "../services/cardano.service.js";
+import { ACAConfig } from "../strategies/ACAStrategy.js";
+import { logger } from "../services/logger.service.js";
+import { PriceUtil } from "../utils/price.util.js";
+import { GridConfig } from "../strategies/GridStrategy.js";
 
 const router = Router();
 
@@ -34,6 +40,7 @@ router.post("/price-target", (req, res) => {
       side,
       triggerType,
       executeOnce = true,
+      poolId,
     } = req.body;
 
     const id = randomUUID();
@@ -50,6 +57,7 @@ router.post("/price-target", (req, res) => {
       orderAmount: parseFloat(orderAmount),
       side,
       triggerType,
+      poolId,
       executeOnce,
     });
 
@@ -66,9 +74,159 @@ router.post("/price-target", (req, res) => {
   }
 });
 
-// src/routes/strategy.routes.ts
+// POST /api/strategy/ACA strategy endpoint
+router.post("/aca", authenticateJWT, async (req: AuthRequest, res) => {
+  try {
+    const {
+      name,
+      walletAddress,
+      tradingPair,
+      baseToken,
+      quoteToken,
+      investmentAmount,
+      intervalMinutes,
+      totalRuns,
+      executeOnce,
+      poolId,
+    } = req.body;
 
-// In the /live endpoint, add orderCreated tracking:
+    const userAddress = req.user?.walletAddress;
+
+    if (!userAddress) {
+      return res.status(401).json({ success: false, error: "Unauthorized" });
+    }
+
+    // Verify wallet ownership
+    const isOwner = await CardanoService.verifyWalletOwnership(
+      walletAddress,
+      userAddress
+    );
+
+    if (!isOwner) {
+      return res.status(403).json({
+        success: false,
+        error: "Not authorized to use this wallet",
+      });
+    }
+
+    const strategyId = `aca-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(7)}`;
+
+    const config: ACAConfig = {
+      id: strategyId,
+      name,
+      walletAddress,
+      tradingPair,
+      baseToken,
+      quoteToken,
+      investmentAmount,
+      intervalMinutes,
+      totalRuns,
+      executeOnce,
+      isActive: true,
+      runsExecuted: 0,
+      poolId,
+    };
+
+    strategyManager.addACAStrategy(config);
+
+    logger.success(`ACA strategy created: ${name}`, name, "strategy");
+
+    res.json({
+      success: true,
+      strategyId,
+      message: "ACA strategy created successfully",
+    });
+  } catch (error: any) {
+    logger.error(
+      `Failed to create ACA strategy: ${error.message}`,
+      undefined,
+      "strategy"
+    );
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/strategy/grid strategy endpoint
+router.post("/grid", authenticateJWT, async (req: AuthRequest, res) => {
+  try {
+    const {
+      name,
+      walletAddress,
+      tradingPair,
+      baseToken,
+      quoteToken,
+      poolId,
+      lowerPrice,
+      upperPrice,
+      gridLevels,
+      investmentPerGrid,
+      executeOnce,
+    } = req.body;
+
+    const userAddress = req.user?.walletAddress;
+
+    if (!userAddress) {
+      return res.status(401).json({ success: false, error: "Unauthorized" });
+    }
+
+    const isOwner = await CardanoService.verifyWalletOwnership(
+      walletAddress,
+      userAddress
+    );
+
+    if (!isOwner) {
+      return res.status(403).json({
+        success: false,
+        error: "Not authorized to use this wallet",
+      });
+    }
+
+    const strategyId = `grid-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(7)}`;
+
+    const config: GridConfig = {
+      id: strategyId,
+      name,
+      walletAddress,
+      tradingPair,
+      baseToken,
+      quoteToken,
+      poolId,
+      lowerPrice,
+      upperPrice,
+      gridLevels,
+      investmentPerGrid,
+      executeOnce,
+      isActive: true,
+      gridOrders: new Map(),
+      profitPerGrid: 0,
+      totalProfit: 0,
+    };
+
+    strategyManager.addGridStrategy(config);
+
+    logger.success(`Grid strategy created: ${name}`, name, "strategy");
+
+    res.json({
+      success: true,
+      strategyId,
+      message: "Grid strategy created successfully",
+    });
+  } catch (error: any) {
+    logger.error(
+      `Failed to create Grid strategy: ${error.message}`,
+      undefined,
+      "strategy"
+    );
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/strategy/live - Get live strategies with enriched data
+// src/routes/strategy.routes.ts
 
 router.get("/live", async (req, res) => {
   try {
@@ -76,135 +234,78 @@ router.get("/live", async (req, res) => {
     const enrichedStrategies = [];
 
     for (const s of strategies) {
-      const status = s.status as any;
-
       try {
         const strategy = strategyManager.getStrategy(s.id);
         if (!strategy) continue;
 
-        const config = (strategy as any).config;
-        const policyId = config.baseToken?.split(".")[0];
+        const status = s.status as any;
 
-        if (!policyId) {
+        // ✅ Handle Price Target Strategy
+        if (status.strategy === "PriceTarget") {
           enrichedStrategies.push({
             id: s.id,
-            name: status.name || "Unknown",
-            tradingPair: status.tradingPair || "N/A",
-            error: "Invalid token configuration",
-          });
-          continue;
-        }
-
-        const poolToken = await PoolToken.findOne({
-          where: { policyId },
-        });
-
-        if (!poolToken) {
-          enrichedStrategies.push({
-            id: s.id,
-            name: status.name || "Unknown",
-            tradingPair: status.tradingPair || "N/A",
-            error: `Pool not found for ${policyId}`,
-          });
-          continue;
-        }
-
-        const assetAStr = poolToken.get("assetA") as string;
-        const assetBStr = poolToken.get("assetB") as string;
-
-        const assetA: Asset =
-          assetAStr === "lovelace" || assetAStr === ""
-            ? { policyId: "", tokenName: "" }
-            : assetAStr.length >= 56
-            ? {
-                policyId: assetAStr.slice(0, 56),
-                tokenName: assetAStr.slice(56),
-              }
-            : { policyId: "", tokenName: "" };
-
-        const assetB: Asset =
-          assetBStr === "lovelace" || assetBStr === ""
-            ? { policyId: "", tokenName: "" }
-            : assetBStr.length >= 56
-            ? {
-                policyId: assetBStr.slice(0, 56),
-                tokenName: assetBStr.slice(56),
-              }
-            : { policyId: "", tokenName: "" };
-
-        const pool = await blockfrostAdapter.getV2PoolByPair(assetA, assetB);
-
-        if (!pool) {
-          enrichedStrategies.push({
-            id: s.id,
-            name: status.name || "Unknown",
-            tradingPair: status.tradingPair || "N/A",
-            error: "Pool not found on DEX",
-          });
-          continue;
-        }
-
-        const [priceA, priceB] = await blockfrostAdapter.getV2PoolPrice({
-          pool,
-        });
-
-        const isAAda = assetAStr === "lovelace" || assetAStr === "";
-        const isBAda = assetBStr === "lovelace" || assetBStr === "";
-
-        let currentPrice = 0;
-
-        if (isAAda && !isBAda) {
-          currentPrice = Number(
-            Big(priceB.toString()).div(1_000_000).toString()
-          );
-        } else if (isBAda && !isAAda) {
-          currentPrice = Number(
-            Big(priceA.toString()).div(1_000_000).toString()
-          );
-        }
-
-        const targetPrice = status.targetPrice || 0;
-        const priceDiff = currentPrice - targetPrice;
-        const priceDiffPct =
-          targetPrice > 0 ? (priceDiff / targetPrice) * 100 : 0;
-
-        const conditionMet =
-          status.triggerType === "ABOVE"
-            ? currentPrice > targetPrice
-            : currentPrice < targetPrice;
-
-        // ✅ Check if order was created for this strategy
-        const hasOrder = await TradeOrder.findOne({
-          where: {
+            strategy: "PriceTarget",
+            name: status.name,
             tradingPair: status.tradingPair,
-            walletAddress: config.walletAddress,
-            status: ["pending", "executing", "completed"],
-          },
-        });
-
-        enrichedStrategies.push({
-          id: s.id,
-          name: status.name,
-          tradingPair: status.tradingPair,
-          side: status.side,
-          triggerType: status.triggerType,
-          orderAmount: status.orderAmount,
-          isActive: status.isActive,
-          currentPrice: currentPrice.toFixed(6),
-          targetPrice: targetPrice.toFixed(6),
-          priceDifference: priceDiff.toFixed(6),
-          priceDifferencePercent: priceDiffPct.toFixed(2),
-          distanceToTarget: Math.abs(priceDiff).toFixed(6),
-          conditionMet: conditionMet,
-          orderCreated: !!hasOrder, // ✅ Add this field
-          status: conditionMet ? "READY" : "WAITING",
-          lastUpdate: new Date().toISOString(),
-        });
+            side: status.side,
+            triggerType: status.triggerType,
+            orderAmount: status.orderAmount,
+            isActive: status.isActive,
+            currentPrice: status.currentPrice || 0,
+            targetPrice: status.targetPrice || 0,
+            priceDifference: status.priceDifference || 0,
+            priceDifferencePercent: status.priceDifferencePercent || 0,
+            distanceToTarget: Math.abs(status.priceDifference || 0),
+            conditionMet: status.conditionMet || false,
+            orderCreated: status.orderCreated || false,
+            lastUpdate: new Date().toISOString(),
+          });
+        }
+        // ✅ Handle ACA Strategy
+        else if (status.type === "ACA") {
+          enrichedStrategies.push({
+            id: s.id,
+            type: "ACA",
+            name: status.name,
+            tradingPair: status.tradingPair,
+            isActive: status.isActive,
+            investmentAmount: status.investmentAmount,
+            intervalMinutes: status.intervalMinutes,
+            runsExecuted: status.runsExecuted,
+            totalRuns: status.totalRuns,
+            lastBuyTime: status.lastBuyTime,
+            nextBuyTime: status.nextBuyTime,
+            timeUntilNextBuy: status.timeUntilNextBuy,
+            progress: status.progress,
+            executeOnce: status.executeOnce,
+            lastUpdate: new Date().toISOString(),
+          });
+        }
+        // ✅ Handle Grid Strategy
+        else if (status.type === "Grid Trading") {
+          enrichedStrategies.push({
+            id: s.id,
+            type: "Grid Trading",
+            name: status.name,
+            tradingPair: status.tradingPair,
+            isActive: status.isActive,
+            lowerPrice: status.lowerPrice,
+            upperPrice: status.upperPrice,
+            gridLevels: status.gridLevels,
+            gridSpacing: status.gridSpacing,
+            investmentPerGrid: status.investmentPerGrid,
+            activeOrders: status.activeOrders,
+            totalProfit: status.totalProfit,
+            profitPerGrid: status.profitPerGrid,
+            executeOnce: status.executeOnce,
+            lastUpdate: new Date().toISOString(),
+          });
+        }
       } catch (err) {
         console.error(`Error enriching strategy ${s.id}:`, err);
         enrichedStrategies.push({
           id: s.id,
-          name: status.name || "Unknown",
+          name: "Unknown",
           error: (err as Error).message,
         });
       }
@@ -223,6 +324,7 @@ router.get("/live", async (req, res) => {
   }
 });
 
+// POST /api/strategy/stop/:id - Stop strategy
 router.post("/stop/:id", (req, res) => {
   try {
     const { id } = req.params;
@@ -244,7 +346,7 @@ router.post("/stop/:id", (req, res) => {
   }
 });
 
-// Start/Resume strategy
+// POST /api/strategy/start/:id - Start strategy
 router.post("/start/:id", (req, res) => {
   try {
     const { id } = req.params;
@@ -266,7 +368,7 @@ router.post("/start/:id", (req, res) => {
   }
 });
 
-// DELETE /api/strategy/:id
+// DELETE /api/strategy/:id - Remove strategy
 router.delete("/:id", (req, res) => {
   try {
     const removed = strategyManager.removeStrategy(req.params.id);

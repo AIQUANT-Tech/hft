@@ -1,28 +1,35 @@
 // src/controllers/wallet.controller.ts
 
-import { Request, Response } from "express";
+import { Response } from "express";
 import { CardanoService } from "../services/cardano.service.js";
-import {
-  AddWalletRequest,
-  RemoveWalletRequest,
-} from "../types/wallet.types.js";
+import { AuthRequest } from "../middleware/auth.middleware.js";
+import { logger } from "../services/logger.service.js";
 
 export class WalletController {
-  static async addWallet(req: Request, res: Response): Promise<void> {
+  // Create wallet - only authenticated user
+  static async createWallet(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { seedPhrase, setDefault }: AddWalletRequest = req.body;
+      // ✅ Get owner address from authenticated user (from JWT)
+      const ownerAddress = req.user?.walletAddress;
 
-      if (!seedPhrase) {
-        res.status(400).json({ error: "seedPhrase (mnemonic) is required" });
+      if (!ownerAddress) {
+        res.status(401).json({
+          success: false,
+          error: "User not authenticated",
+        });
         return;
       }
 
-      const address = await CardanoService.addWallet(seedPhrase);
+      const { address, mnemonic } = await CardanoService.createWallet(
+        ownerAddress
+      );
 
       res.status(201).json({
         success: true,
         address,
+        mnemonic,
         network: "Preprod",
+        message: "⚠️ Save this mnemonic securely. It will not be shown again.",
       });
     } catch (error: any) {
       res.status(400).json({
@@ -32,12 +39,108 @@ export class WalletController {
     }
   }
 
-  static async removeWallet(req: Request, res: Response): Promise<void> {
+  // ✅ Import wallet - only authenticated user
+  static async addWallet(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { address }: RemoveWalletRequest = req.body;
+      const { seedPhrase } = req.body;
+
+      if (!seedPhrase) {
+        res.status(400).json({
+          success: false,
+          error: "seedPhrase (mnemonic) is required",
+        });
+        return;
+      }
+
+      // ✅ Get owner address from authenticated user
+      const ownerAddress = req.user?.walletAddress;
+
+      if (!ownerAddress) {
+        res.status(401).json({
+          success: false,
+          error: "User not authenticated",
+        });
+        return;
+      }
+
+      const address = await CardanoService.addWallet(seedPhrase, ownerAddress);
+
+      res.status(201).json({
+        success: true,
+        address,
+        network: "Preprod",
+        message: "Wallet imported successfully",
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+
+  static async listWallets(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const ownerAddress = req.user?.walletAddress;
+
+      if (!ownerAddress) {
+        res.status(401).json({
+          success: false,
+          error: "User not authenticated",
+        });
+        return;
+      }
+
+      // ✅ Get only user's wallets (returns string[])
+      const userWallets = await CardanoService.getWalletsByOwner(ownerAddress);
+
+      res.status(200).json({
+        success: true,
+        wallets: userWallets, // ✅ Array of address strings
+        network: "Preprod",
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+
+  // ✅ Remove wallet - verify ownership
+  static async removeWallet(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { address } = req.body;
 
       if (!address) {
-        res.status(400).json({ error: "address is required" });
+        res.status(400).json({
+          success: false,
+          error: "address is required",
+        });
+        return;
+      }
+
+      const ownerAddress = req.user?.walletAddress;
+
+      if (!ownerAddress) {
+        res.status(401).json({
+          success: false,
+          error: "User not authenticated",
+        });
+        return;
+      }
+
+      // ✅ Verify ownership before deletion
+      const isOwner = await CardanoService.verifyWalletOwnership(
+        address,
+        ownerAddress
+      );
+
+      if (!isOwner) {
+        res.status(403).json({
+          success: false,
+          error: "You don't have permission to delete this wallet",
+        });
         return;
       }
 
@@ -55,29 +158,40 @@ export class WalletController {
     }
   }
 
-  static async listWallets(req: Request, res: Response): Promise<void> {
-    try {
-      const wallets = await CardanoService.listWallets();
-
-      res.status(200).json({
-        success: true,
-        wallets,
-        network: "Preprod",
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        error: error.message,
-      });
-    }
-  }
-
-  static async getBalance(req: Request, res: Response): Promise<void> {
+  // ✅ Get balance - verify ownership
+  static async getBalance(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { address } = req.params;
 
       if (!address) {
-        res.status(400).json({ error: "address is required" });
+        res.status(400).json({
+          success: false,
+          error: "address is required",
+        });
+        return;
+      }
+
+      const ownerAddress = req.user?.walletAddress;
+
+      if (!ownerAddress) {
+        res.status(401).json({
+          success: false,
+          error: "User not authenticated",
+        });
+        return;
+      }
+
+      // ✅ Verify ownership before showing balance
+      const isOwner = await CardanoService.verifyWalletOwnership(
+        address,
+        ownerAddress
+      );
+
+      if (!isOwner) {
+        res.status(403).json({
+          success: false,
+          error: "You don't have permission to view this wallet",
+        });
         return;
       }
 
@@ -95,21 +209,62 @@ export class WalletController {
     }
   }
 
-  static async createWallet(req: Request, res: Response): Promise<void> {
+  // ✅ Withdraw funds - verify ownership
+  static async withdrawFunds(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { address, mnemonic } = await CardanoService.createWallet();
+      const { fromAddress, toAddress, assets } = req.body; // ✅ Changed to assets array
+      const userAddress = req.user?.walletAddress;
 
-      res.status(201).json({
+      if (!userAddress) {
+        res.status(401).json({ success: false, error: "Unauthorized" });
+        return;
+      }
+
+      // Verify ownership
+      const isOwner = await CardanoService.verifyWalletOwnership(
+        fromAddress,
+        userAddress
+      );
+
+      if (!isOwner) {
+        res.status(403).json({
+          success: false,
+          error: "Not authorized to withdraw from this wallet",
+        });
+        return;
+      }
+
+      if (!Array.isArray(assets) || assets.length === 0) {
+        res.status(400).json({
+          success: false,
+          error: "No assets selected for withdrawal",
+        });
+        return;
+      }
+
+      const txHash = await CardanoService.withdrawFunds(
+        fromAddress,
+        toAddress,
+        assets,
+        userAddress
+      );
+
+      logger.success(
+        `Withdrawal successful: ${
+          assets.length
+        } asset(s) to ${toAddress.substring(0, 20)}...`,
+        undefined,
+        "wallet"
+      );
+
+      res.json({
         success: true,
-        address,
-        mnemonic,
-        network: "Preprod",
+        txHash,
+        message: "Withdrawal successful",
       });
     } catch (error: any) {
-      res.status(400).json({
-        success: false,
-        error: error.message,
-      });
+      logger.error(`Withdrawal failed: ${error.message}`, undefined, "wallet");
+      res.status(500).json({ success: false, error: error.message });
     }
   }
 }

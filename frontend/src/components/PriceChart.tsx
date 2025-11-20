@@ -88,7 +88,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ tokenId, days = 30 }) => {
       month: "short",
       day: "numeric",
     }),
-    price: parseFloat(point.price.toFixed(8)),
+    price: parseFloat(point.price.toFixed(12)),
     volume: point.volume ? point.volume / 1000000 : 0,
   }));
 
@@ -108,7 +108,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ tokenId, days = 30 }) => {
             {payload[0].payload.timestamp}
           </p>
           <p className="text-blue-400 text-sm">
-            Price: ${payload[0].value.toFixed(6)}
+            Price: ${payload[0].value.toFixed(12)}
           </p>
           {payload[1] && (
             <p className="text-purple-400 text-sm">
@@ -244,7 +244,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ tokenId, days = 30 }) => {
         <div className="bg-linear-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 p-4 rounded-xl">
           <p className="text-gray-400 text-sm mb-1">Current Price</p>
           <p className="text-2xl font-bold text-blue-400">
-            ${currentToken?.price_by_ada?.toFixed(6) || "N/A"}
+            ${currentToken?.price_by_ada?.toFixed(12) || "N/A"}
           </p>
         </div>
         <div
@@ -268,13 +268,13 @@ const PriceChart: React.FC<PriceChartProps> = ({ tokenId, days = 30 }) => {
         <div className="bg-linear-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20 p-4 rounded-xl">
           <p className="text-gray-400 text-sm mb-1">24h High</p>
           <p className="text-2xl font-bold text-purple-400">
-            ${currentToken?.high_24h?.toFixed(6) || "N/A"}
+            ${currentToken?.high_24h?.toFixed(12) || "N/A"}
           </p>
         </div>
         <div className="bg-linear-to-br from-orange-500/10 to-orange-600/10 border border-orange-500/20 p-4 rounded-xl">
           <p className="text-gray-400 text-sm mb-1">24h Low</p>
           <p className="text-2xl font-bold text-orange-400">
-            ${currentToken?.low_24h?.toFixed(6) || "N/A"}
+            ${currentToken?.low_24h?.toFixed(12) || "N/A"}
           </p>
         </div>
       </div>
@@ -384,7 +384,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ tokenId, days = 30 }) => {
           <div>
             <p className="text-gray-400 text-xs mb-1">All-Time High</p>
             <p className="text-white font-semibold">
-              ${currentToken?.ath?.toFixed(6) || "N/A"}
+              ${currentToken?.ath?.toFixed(12) || "N/A"}
             </p>
           </div>
           <div>

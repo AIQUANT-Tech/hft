@@ -5,6 +5,9 @@ import {
   PriceTargetStrategy,
   PriceTargetConfig,
 } from "../strategies/PriceTargetStrategy.js";
+import { ACAStrategy, ACAConfig } from "../strategies/ACAStrategy.js"; // ✅ Import
+import { logger } from "./logger.service.js";
+import { GridConfig, GridStrategy } from "../strategies/GridStrategy.js";
 
 export class StrategyManagerService {
   private strategies: Map<string, BaseStrategy> = new Map();
@@ -14,17 +17,15 @@ export class StrategyManagerService {
 
   async start() {
     if (this.isRunning) {
-      console.log("Strategy manager already running");
+      logger.warning("Strategy manager already running", undefined, "system");
       return;
     }
 
     this.isRunning = true;
-    console.log("🎯 Strategy manager started");
+    logger.success("Strategy manager started", undefined, "system");
 
-    // Run initial check
     await this.executeStrategies();
 
-    // Schedule periodic checks
     this.intervalId = setInterval(async () => {
       await this.executeStrategies();
     }, this.checkInterval);
@@ -36,15 +37,29 @@ export class StrategyManagerService {
       this.intervalId = undefined;
     }
     this.isRunning = false;
-    console.log("🛑 Strategy manager stopped");
+    logger.warning("Strategy manager stopped", undefined, "system");
   }
 
   private async executeStrategies() {
+    if (this.strategies.size === 0) {
+      return;
+    }
+
+    logger.info(
+      `Executing ${this.strategies.size} active strategy(ies)`,
+      undefined,
+      "strategy"
+    );
+
     for (const [id, strategy] of this.strategies) {
       try {
         await strategy.execute();
       } catch (error) {
-        console.error(`Error executing strategy ${id}:`, error);
+        logger.error(
+          `Error executing strategy ${id}: ${(error as Error).message}`,
+          strategy.config.name,
+          "strategy"
+        );
       }
     }
   }
@@ -53,21 +68,96 @@ export class StrategyManagerService {
     const strategy = new PriceTargetStrategy(config);
 
     if (!strategy.validate()) {
+      logger.error("Invalid strategy configuration", config.name, "strategy");
       throw new Error("Invalid strategy configuration");
     }
 
     this.strategies.set(config.id, strategy);
-    console.log(`Added PriceTarget strategy: ${config.name}`);
+    logger.success(`Price Target strategy added`, config.name, "strategy");
+
+    return config.id;
+  }
+
+  // ✅ Add ACA Strategy
+  addACAStrategy(config: ACAConfig): string {
+    const strategy = new ACAStrategy(config);
+
+    if (!strategy.validate()) {
+      logger.error(
+        "Invalid ACA strategy configuration",
+        config.name,
+        "strategy"
+      );
+      throw new Error("Invalid ACA strategy configuration");
+    }
+
+    this.strategies.set(config.id, strategy);
+    logger.success(`ACA strategy added`, config.name, "strategy");
+
+    return config.id;
+  }
+
+  addGridStrategy(config: GridConfig): string {
+    const strategy = new GridStrategy(config);
+
+    if (!strategy.validate()) {
+      logger.error(
+        "Invalid Grid strategy configuration",
+        config.name,
+        "strategy"
+      );
+      throw new Error("Invalid Grid strategy configuration");
+    }
+
+    this.strategies.set(config.id, strategy);
+    logger.success(`Grid strategy added`, config.name, "strategy");
 
     return config.id;
   }
 
   removeStrategy(id: string): boolean {
+    const strategy = this.strategies.get(id);
     const removed = this.strategies.delete(id);
+
     if (removed) {
-      console.log(`❌ Removed strategy: ${id}`);
+      logger.warning(`Strategy removed`, strategy?.config.name, "strategy");
+    } else {
+      logger.error(`Failed to remove strategy: ${id}`, undefined, "strategy");
     }
+
     return removed;
+  }
+
+  stopStrategy(id: string): boolean {
+    const strategy = this.strategies.get(id);
+
+    if (strategy) {
+      strategy.config.isActive = false;
+      logger.warning(
+        `Strategy stopped by user`,
+        strategy.config.name,
+        "strategy"
+      );
+      return true;
+    }
+
+    return false;
+  }
+
+  startStrategy(id: string): boolean {
+    const strategy = this.strategies.get(id);
+
+    if (strategy) {
+      strategy.config.isActive = true;
+      logger.success(
+        `Strategy started by user`,
+        strategy.config.name,
+        "strategy"
+      );
+      return true;
+    }
+
+    return false;
   }
 
   getStrategy(id: string): BaseStrategy | undefined {

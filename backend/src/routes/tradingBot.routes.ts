@@ -17,6 +17,7 @@ router.post("/orders", async (req, res) => {
       triggerAbove,
       isBuy,
       amount,
+      poolId,
     } = req.body;
 
     if (
@@ -32,16 +33,20 @@ router.post("/orders", async (req, res) => {
       });
       return;
     }
+    const priceStr = targetPrice.toFixed(20); // Use high precision
+    // Remove trailing zeros
+    const trimmed = priceStr.replace(/\.?0+$/, "");
 
     const order = await tradingBotService.createOrder({
       walletAddress,
       tradingPair,
       baseToken,
       quoteToken,
-      targetPrice: parseFloat(targetPrice),
+      targetPrice: trimmed,
       triggerAbove: triggerAbove === true,
       isBuy: isBuy === true,
       amount: parseFloat(amount),
+      poolId,
     });
 
     res.status(201).json({
@@ -56,67 +61,67 @@ router.post("/orders", async (req, res) => {
   }
 });
 
-// GET /api/bot/orders - Get all orders (optionally filter by wallet)
-router.get("/orders", async (req, res) => {
-  try {
-    const walletAddress = req.query.walletAddress as string | undefined;
-    const orders = await tradingBotService.getOrders(walletAddress);
+// // GET /api/bot/orders - Get all orders (optionally filter by wallet)
+// router.get("/orders", async (req, res) => {
+//   try {
+//     const walletAddress = req.query.walletAddress as string | undefined;
+//     const orders = await tradingBotService.getOrders(walletAddress);
 
-    res.json({
-      success: true,
-      count: orders.length,
-      orders,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: (error as Error).message,
-    });
-  }
-});
+//     res.json({
+//       success: true,
+//       count: orders.length,
+//       orders,
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       error: (error as Error).message,
+//     });
+//   }
+// });
 
-// GET /api/bot/orders/:id - Get order by ID
-router.get("/orders/:id", async (req, res) => {
-  try {
-    const order = await tradingBotService.getOrderById(req.params.id);
+// // GET /api/bot/orders/:id - Get order by ID
+// router.get("/orders/:id", async (req, res) => {
+//   try {
+//     const order = await tradingBotService.getOrderById(req.params.id);
 
-    if (!order) {
-      res.status(404).json({
-        success: false,
-        error: "Order not found",
-      });
-      return;
-    }
+//     if (!order) {
+//       res.status(404).json({
+//         success: false,
+//         error: "Order not found",
+//       });
+//       return;
+//     }
 
-    res.json({
-      success: true,
-      order,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: (error as Error).message,
-    });
-  }
-});
+//     res.json({
+//       success: true,
+//       order,
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       error: (error as Error).message,
+//     });
+//   }
+// });
 
-// DELETE /api/bot/orders/:id - Cancel order
-router.delete("/orders/:id", async (req, res) => {
-  try {
-    const order = await tradingBotService.cancelOrder(req.params.id);
+// // DELETE /api/bot/orders/:id - Cancel order
+// router.delete("/orders/:id", async (req, res) => {
+//   try {
+//     const order = await tradingBotService.cancelOrder(req.params.id);
 
-    res.json({
-      success: true,
-      message: "Order cancelled",
-      order,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: (error as Error).message,
-    });
-  }
-});
+//     res.json({
+//       success: true,
+//       message: "Order cancelled",
+//       order,
+//     });
+//   } catch (error) {
+//     res.status(400).json({
+//       success: false,
+//       error: (error as Error).message,
+//     });
+//   }
+// });
 
 // POST /api/bot/start - Start bot
 router.post("/start", async (req, res) => {

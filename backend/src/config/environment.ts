@@ -33,6 +33,19 @@ export const config = {
     NAME: process.env.DB_NAME || "hft",
   },
   PASSPHRASE: process.env.PASSPHRASE,
+
+  // JWT
+  JWT_SECRET: process.env.JWT_SECRET || "your-super-secret-key-change-this",
+  JWT_COOKIE_NAME: process.env.JWT_COOKIE_NAME || "auth_token",
+
+  // Frontend URL
+  FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:3000",
+  FRONTEND_URL_2: process.env.FRONTEND_URL_2 || "http://localhost:3000",
+
+  // Encryption
+  ENCRYPTION_KEY:
+    process.env.ENCRYPTION_KEY ||
+    "3d0a82d70d695647e91cefcf90dca572a98c439b745e15fa1a30d6aacc50e9a2",
 } as const;
 
 export default config;

@@ -10,14 +10,18 @@ import {
   Dex,
   calculateSwapExactIn,
   calculateSwapExactOut,
+  GetPoolByIdParams,
+  PoolV1,
 } from "@minswap/sdk";
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { Lucid, Blockfrost } from "lucid-cardano";
+import { Lucid, Blockfrost, Data } from "lucid-cardano";
 import environment from "../config/environment.js";
-import { EncryptionUtil } from "../utils/encryption.util.js"; // Import
+import { EncryptionUtil } from "../utils/encryption.util.js";
+import { logger } from "./logger.service.js"; // ✅ Import logger
 import Big from "big.js";
 import fs from "fs";
 import path from "path";
+import { PriceUtil } from "../utils/price.util.js";
 
 const blockfrostAPI = new BlockFrostAPI({
   projectId: environment.BLOCKFROST.PROJECT_ID,
@@ -35,12 +39,12 @@ export class TradingBotService {
 
   async start() {
     if (this.isRunning) {
-      console.log("Trading bot already running");
+      logger.warning("Trading bot already running", undefined, "system");
       return;
     }
 
     this.isRunning = true;
-    console.log("🤖 Trading bot started");
+    logger.success("Trading bot started", undefined, "system");
 
     await this.checkAndExecuteTrades();
 
@@ -55,7 +59,7 @@ export class TradingBotService {
       this.intervalId = undefined;
     }
     this.isRunning = false;
-    console.log("🛑 Trading bot stopped");
+    logger.warning("Trading bot stopped", undefined, "system");
   }
 
   private async checkAndExecuteTrades() {
@@ -68,13 +72,21 @@ export class TradingBotService {
         return;
       }
 
-      console.log(`🔍 Checking ${pendingOrders.length} pending orders...`);
+      logger.info(
+        `Checking ${pendingOrders.length} pending orders...`,
+        undefined,
+        "order"
+      );
 
       for (const order of pendingOrders) {
         try {
           await this.processOrder(order);
         } catch (error) {
-          console.error(`❌ Error processing order ${order.id}:`, error);
+          logger.error(
+            `Error processing order ${order.id}: ${(error as Error).message}`,
+            undefined,
+            "order"
+          );
           await order.update({
             status: "failed",
             errorMessage: (error as Error).message,
@@ -82,16 +94,28 @@ export class TradingBotService {
         }
       }
     } catch (error) {
-      console.error("❌ Error in trading bot:", error);
+      logger.error(
+        `Error in trading bot: ${(error as Error).message}`,
+        undefined,
+        "system"
+      );
     }
   }
 
   private async processOrder(order: TradeOrder) {
     try {
-      const currentPrice = await this.getCurrentPrice(order.baseToken);
+      // ✅ Use accurate swap-based pricing
+      const currentPrice = await PriceUtil.calculateTokenPrice(
+        order.poolId,
+        order.baseToken
+      );
 
       if (!currentPrice) {
-        console.log(`⚠️ No price for ${order.tradingPair}`);
+        logger.warning(
+          `No price available for ${order.tradingPair}`,
+          undefined,
+          "order"
+        );
         return;
       }
 
@@ -104,22 +128,26 @@ export class TradingBotService {
       const priceDiff = Math.abs(currentPrice - Number(order.targetPrice));
       const pricePct = (priceDiff / Number(order.targetPrice)) * 100;
 
-      console.log(
-        `📊 ${order.tradingPair}: Current ${currentPrice.toFixed(
-          6
-        )} | Target ${Number(order.targetPrice).toFixed(6)} | ${
+      logger.info(
+        `${order.tradingPair}: Current ${currentPrice} | Target ${Number(
+          order.targetPrice
+        )} | ${
           conditionMet ? "✅ CONDITION MET" : "⏳ WAITING"
-        } (${pricePct.toFixed(2)}% away)`
+        } (${pricePct}% away)`,
+        undefined,
+        "order"
       );
 
       if (!conditionMet) {
         return;
       }
 
-      console.log(
-        `🚀 Executing ${order.isBuy ? "BUY" : "SELL"} order for ${
+      logger.success(
+        `Executing ${order.isBuy ? "BUY" : "SELL"} order for ${
           order.tradingPair
-        }...`
+        }`,
+        undefined,
+        "order"
       );
 
       await order.update({ status: "executing" });
@@ -133,76 +161,66 @@ export class TradingBotService {
         txHash: txHash,
       });
 
-      console.log(`✅ Order ${order.id} completed!`);
-      console.log(`🔗 TX Hash: ${txHash}`);
-      console.log(
-        `🔍 View on explorer: https://preprod.cardanoscan.io/transaction/${txHash}`
+      logger.success(`Order ${order.id} completed!`, undefined, "order");
+      logger.info(`TX Hash: ${txHash}`, undefined, "order");
+      logger.info(
+        `View on explorer: https://preprod.cardanoscan.io/transaction/${txHash}`,
+        undefined,
+        "order"
       );
     } catch (error) {
-      console.error(`❌ Error processing order ${order.id}:`, error);
+      logger.error(
+        `Error processing order ${order.id}: ${(error as Error).message}`,
+        undefined,
+        "order"
+      );
       throw error;
     }
   }
 
-  private async getCurrentPrice(baseToken: string): Promise<number | null> {
+  private async getCurrentPrice(poolId: string): Promise<number | null> {
     try {
-      const policyId = baseToken.split(".")[0];
-
-      const poolToken = await PoolToken.findOne({
-        where: { policyId },
-      });
-
-      if (!poolToken) {
-        return null;
-      }
-
-      const assetAStr = poolToken.get("assetA") as string;
-      const assetBStr = poolToken.get("assetB") as string;
-
-      const assetA: Asset =
-        assetAStr === "lovelace" || assetAStr === ""
-          ? { policyId: "", tokenName: "" }
-          : assetAStr.length >= 56
-          ? { policyId: assetAStr.slice(0, 56), tokenName: assetAStr.slice(56) }
-          : { policyId: "", tokenName: "" };
-
-      const assetB: Asset =
-        assetBStr === "lovelace" || assetBStr === ""
-          ? { policyId: "", tokenName: "" }
-          : assetBStr.length >= 56
-          ? { policyId: assetBStr.slice(0, 56), tokenName: assetBStr.slice(56) }
-          : { policyId: "", tokenName: "" };
-
-      const pool = await blockfrostAdapter.getV2PoolByPair(assetA, assetB);
+      const pool = await blockfrostAdapter.getV1PoolById({ id: poolId });
 
       if (!pool) {
+        logger.warning(`Pool ${poolId} not found on DEX`, undefined, "order");
         return null;
       }
 
-      const [priceA, priceB] = await blockfrostAdapter.getV2PoolPrice({ pool });
+      const [priceA, priceB] = await blockfrostAdapter.getV1PoolPrice({
+        pool,
+        decimalsA: 1_000_000,
+      });
 
-      const isAAda = assetAStr === "lovelace" || assetAStr === "";
-      const isBAda = assetBStr === "lovelace" || assetBStr === "";
+      const isAAda = pool.assetA === "lovelace" || pool.assetA === "";
+      const isBAda = pool.assetB === "lovelace" || pool.assetB === "";
 
+      // ✅ FIX: Divide by 1,000,000 to convert lovelace to ADA
       if (isAAda && !isBAda) {
-        return Number(Big(priceB.toString()).div(1_000_000).toString());
+        return Number(priceB.toString());
       } else if (isBAda && !isAAda) {
-        return Number(Big(priceA.toString()).div(1_000_000).toString());
+        return Number(priceA.toString());
       }
 
       return null;
     } catch (error) {
-      console.error("❌ Error fetching price:", error);
+      logger.error(
+        `Error fetching price: ${(error as Error).message}`,
+        undefined,
+        "order"
+      );
       return null;
     }
   }
 
   private async executeSwap(order: TradeOrder): Promise<string> {
     try {
-      console.log(
-        `💰 Executing REAL swap: ${order.isBuy ? "BUY" : "SELL"} ${
-          order.amount
-        } ${order.tradingPair}`
+      logger.info(
+        `Executing REAL swap: ${order.isBuy ? "BUY" : "SELL"} ${order.amount} ${
+          order.tradingPair
+        }`,
+        undefined,
+        "order"
       );
 
       // Initialize Lucid
@@ -222,7 +240,11 @@ export class TradingBotService {
         `${order.walletAddress}.json`
       );
 
-      console.log(`📁 Loading wallet from: ${walletPath}`);
+      logger.info(
+        `Loading wallet from: ${order.walletAddress.substring(0, 20)}...`,
+        undefined,
+        "wallet"
+      );
 
       if (!fs.existsSync(walletPath)) {
         throw new Error(`Wallet file not found: ${walletPath}`);
@@ -230,28 +252,31 @@ export class TradingBotService {
 
       const walletData = JSON.parse(fs.readFileSync(walletPath, "utf-8"));
 
-      // Decrypt the seed phrase
       if (!walletData.encryptedMnemonic) {
         throw new Error(
           `Encrypted mnemonic not found in wallet file: ${walletPath}`
         );
       }
 
-      console.log(`🔓 Decrypting seed phrase...`);
-      const seedPhrase = EncryptionUtil.decrypt(walletData.encryptedMnemonic);
+      logger.info("Decrypting seed phrase...", undefined, "wallet");
+
+      const seedPhrase = EncryptionUtil.decrypt(
+        walletData.encryptedMnemonic,
+        walletData.ownerAddress
+      );
 
       if (!seedPhrase) {
         throw new Error("Failed to decrypt seed phrase");
       }
 
-      console.log(`✅ Seed phrase decrypted successfully`);
+      logger.success("Seed phrase decrypted successfully", undefined, "wallet");
 
       // Select wallet from seed phrase
       lucid.selectWalletFromSeed(seedPhrase);
 
       // Get wallet address to verify
       const walletAddress = await lucid.wallet.address();
-      console.log(`Wallet loaded: ${walletAddress}`);
+      logger.success(`Wallet loaded: ${walletAddress}`, undefined, "wallet");
 
       if (walletAddress !== order.walletAddress) {
         throw new Error(
@@ -260,37 +285,30 @@ export class TradingBotService {
       }
 
       // Get pool
-      const policyId = order.baseToken.split(".")[0];
-      const assetName = order.baseToken.split(".")[1] || "";
+      const poolId = order.poolId;
 
-      const poolToken = await PoolToken.findOne({ where: { policyId } });
-
-      if (!poolToken) {
-        throw new Error("Pool not found");
-      }
-
-      // Build Asset objects
-      const baseAsset: Asset = {
-        policyId: policyId,
-        tokenName: assetName,
+      // const quoteAsset: Asset = { policyId: "", tokenName: "" }; // ADA
+      const params: GetPoolByIdParams = {
+        id: poolId,
       };
-
-      const quoteAsset: Asset = { policyId: "", tokenName: "" }; // ADA
-
-      const pool = await blockfrostAdapter.getV2PoolByPair(
-        baseAsset,
-        quoteAsset
-      );
+      const pool = await blockfrostAdapter.getV1PoolById(params);
 
       if (!pool) {
         throw new Error("Pool not found on DEX");
       }
 
-      console.log(`📊 Found pool datum: ${pool.address}`);
+      logger.info(`Found pool: ${pool.address}`, undefined, "order");
 
       // Determine reserves
       const assetAStr = String(pool.assetA);
       const assetBStr = String(pool.assetB);
+
+      const policyId = order.baseToken.split(".")[0];
+      const assetName = order.baseToken.split(".")[1];
+      const baseAsset: Asset = {
+        policyId,
+        tokenName: assetName,
+      };
 
       let reserveIn: bigint, reserveOut: bigint;
 
@@ -318,7 +336,7 @@ export class TradingBotService {
       const dex = new Dex(lucid as any);
 
       const availableUtxos = await lucid.wallet.getUtxos();
-      console.log(`💰 Found ${availableUtxos.length} UTXOs`);
+      logger.info(`Found ${availableUtxos.length} UTXOs`, undefined, "wallet");
 
       if (availableUtxos.length === 0) {
         throw new Error("No UTXOs available in wallet");
@@ -336,8 +354,10 @@ export class TradingBotService {
 
         const maximumAmountIn = (idealQuoteIn * (100n + slippagePct)) / 100n;
 
-        console.log(
-          `📊 Buying ${exactBaseOut} base tokens with maximum ${maximumAmountIn} lovelace`
+        logger.info(
+          `Buying ${exactBaseOut} base tokens with maximum ${maximumAmountIn} lovelace`,
+          undefined,
+          "order"
         );
 
         const swapTx = await dex.buildSwapExactOutTx({
@@ -352,7 +372,11 @@ export class TradingBotService {
         const signedTx = await swapTx.sign().complete();
         const txHash = await signedTx.submit();
 
-        console.log(`✅ BUY transaction submitted: ${txHash}`);
+        logger.success(
+          `BUY transaction submitted: ${txHash}`,
+          undefined,
+          "order"
+        );
         return txHash;
       } else {
         // SELL: selling BASE tokens for ADA
@@ -366,8 +390,10 @@ export class TradingBotService {
 
         const minimumAmountOut = (idealOut * (100n - slippagePct)) / 100n;
 
-        console.log(
-          `📊 Selling ${amountIn} base tokens for minimum ${minimumAmountOut} lovelace`
+        logger.info(
+          `Selling ${amountIn} base tokens for minimum ${minimumAmountOut} lovelace`,
+          undefined,
+          "order"
         );
 
         const swapTx = await dex.buildSwapExactInTx({
@@ -383,11 +409,19 @@ export class TradingBotService {
         const signedTx = await swapTx.sign().complete();
         const txHash = await signedTx.submit();
 
-        console.log(`✅ SELL transaction submitted: ${txHash}`);
+        logger.success(
+          `SELL transaction submitted: ${txHash}`,
+          undefined,
+          "order"
+        );
         return txHash;
       }
     } catch (error) {
-      console.error(`❌ Swap execution failed:`, error);
+      logger.error(
+        `Swap execution failed: ${(error as Error).message}`,
+        undefined,
+        "order"
+      );
       throw error;
     }
   }
@@ -401,13 +435,20 @@ export class TradingBotService {
     triggerAbove: boolean;
     isBuy: boolean;
     amount: number;
+    poolId: string;
   }) {
+    console.log("targetPrice", orderData.targetPrice);
+
     const order = await TradeOrder.create({
       ...orderData,
       status: "pending",
     });
 
-    console.log(`📝 Created order ${order.id} for ${orderData.tradingPair}`);
+    logger.success(
+      `Created order ${order.id} for ${orderData.tradingPair}`,
+      undefined,
+      "order"
+    );
     return order;
   }
 }

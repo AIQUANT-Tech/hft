@@ -61,11 +61,7 @@ export class DatabaseService {
    * Calculate price by simulating a swap (most accurate)
    * Swap 1 token for ADA and see how much ADA we get
    */
-  /**
-   * Calculate price by simulating a swap (most accurate)
-   * Swap 1 token for ADA and see how much ADA we get
-   */
-  private calculatePriceViaSwap(
+  public calculatePriceViaSwap(
     tokenDecimals: number,
     isTokenA: boolean,
     reserveA: bigint,
@@ -73,10 +69,9 @@ export class DatabaseService {
     symbol: string
   ): number {
     try {
-      // Determine which reserve is input and output
       const [reserveIn, reserveOut] = isTokenA
-        ? [reserveA, reserveB] // Token is A, ADA is B
-        : [reserveB, reserveA]; // Token is B, ADA is A
+        ? [reserveA, reserveB]
+        : [reserveB, reserveA];
 
       if (reserveIn === 0n || reserveOut === 0n) {
         console.warn(
@@ -85,18 +80,17 @@ export class DatabaseService {
         return 0;
       }
 
-      //  FIX: For tokens with 0 decimals, we still need a reasonable amount
-      // Most Cardano tokens use 0 decimals but are divisible into smaller units
-      // We'll use 1_000_000 as standard unit (like 1 whole token with 6 implicit decimals)
-      const oneTokenInSmallestUnit = BigInt(10 ** Math.max(tokenDecimals, 6));
+      // ✅ FIX: Swap 1 million tokens in their actual decimal representation
+      // For MIN (0 decimals): 1M * 10^0 = 1,000,000
+      // For USDC (6 decimals): 1M * 10^6 = 1,000,000,000,000
+      const amountToSwap = BigInt(1_000_000 * 10 ** tokenDecimals);
 
       console.log(
-        `  ${symbol}: decimals=${tokenDecimals}, swap input=${oneTokenInSmallestUnit}, reserves in/out=${reserveIn}/${reserveOut}`
+        `  ${symbol}: decimals=${tokenDecimals}, swap input=${amountToSwap}, reserves in/out=${reserveIn}/${reserveOut}`
       );
 
-      // Use Minswap's swap calculation (includes 0.3% fee)
       const { amountOut } = calculateSwapExactIn({
-        amountIn: oneTokenInSmallestUnit,
+        amountIn: amountToSwap,
         reserveIn,
         reserveOut,
       });
@@ -107,12 +101,13 @@ export class DatabaseService {
       }
 
       // Convert from lovelace to ADA
-      const priceInAda = Number(amountOut) / 1_000_000;
+      const adaReceived = Number(amountOut) / 1_000_000;
+
+      // ✅ Price = ADA received / tokens swapped (1 million)
+      const priceInAda = adaReceived / 1_000_000;
 
       console.log(
-        `  ${symbol}: swapped ${oneTokenInSmallestUnit}n for ${amountOut}n lovelace = ${priceInAda.toFixed(
-          8
-        )} ADA`
+        `  ${symbol}: swapped 1M tokens (${amountToSwap}) for ${amountOut} lovelace (${adaReceived} ADA) = ${priceInAda} ADA per token`
       );
 
       return priceInAda;
@@ -144,19 +139,18 @@ export class DatabaseService {
     try {
       console.log(`🔄 Syncing page ${page}...`);
 
-      const { pools } = await blockfrostAdapter.getV2Pools({
+      const v1pools = await blockfrostAdapter.getV1Pools({
         page,
-        count: 100,
       });
 
-      if (!pools || pools.length === 0) {
+      if (!v1pools || v1pools.length === 0) {
         console.log(`No pools found on page ${page}`);
         return 0;
       }
 
       let synced = 0;
 
-      for (const pool of pools) {
+      for (const pool of v1pools) {
         try {
           const assetAStr = String(pool.assetA);
           const assetBStr = String(pool.assetB);
@@ -211,7 +205,7 @@ export class DatabaseService {
           }
 
           // sFIXED: Create unique poolId from asset pair
-          const poolId = `${policyId}_${assetName}`;
+          const poolId = pool.id;
 
           await PoolToken.upsert({
             poolId, // FIXED: Use policyId + assetName as unique ID
@@ -224,13 +218,12 @@ export class DatabaseService {
             assetA: assetAStr,
             assetB: assetBStr,
             lastUpdated: new Date(),
+            dexSource: "MinswapV1",
           });
 
           synced++;
           console.log(
-            `✓ ${symbol}: ${priceAda.toFixed(
-              8
-            )} ADA/token (${tokenDecimals} decimals)`
+            `✓ ${symbol}: ${priceAda} ADA/token (${tokenDecimals} decimals)`
           );
         } catch (err) {
           console.error("Error syncing pool:", err);

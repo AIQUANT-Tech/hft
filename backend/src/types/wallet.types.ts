@@ -2,6 +2,7 @@
 
 export interface AddWalletRequest {
   seedPhrase: string; // Mnemonic phrase
+  ownerAddress: string;
   setDefault?: boolean;
 }
 

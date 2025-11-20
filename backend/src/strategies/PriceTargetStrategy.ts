@@ -1,26 +1,15 @@
 // src/strategies/PriceTargetStrategy.ts
 
 import { BaseStrategy, StrategyConfig } from "./BaseStrategy.js";
-import { PoolToken } from "../models/token.model.js";
 import { TradeOrder } from "../models/tradeOrder.model.js";
-import { BlockfrostAdapter, NetworkId, Asset } from "@minswap/sdk";
-import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import environment from "../config/environment.js";
-import Big from "big.js";
-
-const blockfrostAPI = new BlockFrostAPI({
-  projectId: environment.BLOCKFROST.PROJECT_ID,
-});
-const blockfrostAdapter = new BlockfrostAdapter({
-  networkId: NetworkId.TESTNET,
-  blockFrost: blockfrostAPI,
-});
+import { PriceUtil } from "../utils/price.util.js"; // ✅ Import
 
 export interface PriceTargetConfig extends StrategyConfig {
   targetPrice: number;
   orderAmount: number;
   side: "BUY" | "SELL";
   triggerType: "ABOVE" | "BELOW";
+  poolId: string;
   executeOnce: boolean;
 }
 
@@ -55,8 +44,6 @@ export class PriceTargetStrategy extends BaseStrategy {
     return true;
   }
 
-  // src/strategies/PriceTargetStrategy.ts
-
   async execute(): Promise<void> {
     try {
       if (!this.config.isActive) {
@@ -65,7 +52,7 @@ export class PriceTargetStrategy extends BaseStrategy {
 
       await this.updateCurrentPrice();
 
-      // ✅ Check if order exists and is completed
+      // Check if order exists and is completed
       if (this.orderId) {
         const order = await TradeOrder.findByPk(this.orderId);
 
@@ -75,7 +62,6 @@ export class PriceTargetStrategy extends BaseStrategy {
               `✅ Order ${this.orderId} completed at ${order.executedPrice}`
             );
 
-            // ✅ Stop strategy if executeOnce is true
             if (this.strategyConfig.executeOnce) {
               this.config.isActive = false;
               this.log("🛑 Strategy stopped (executeOnce mode)");
@@ -83,22 +69,19 @@ export class PriceTargetStrategy extends BaseStrategy {
               this.orderId = undefined;
               this.orderCreated = false;
             }
-            return; // ✅ Exit here to prevent further execution
+            return;
           }
 
           if (order.status === "pending") {
-            // Strategy is waiting, don't do anything
             return;
           }
 
           if (order.status === "failed") {
             this.log(`❌ Order ${this.orderId} failed: ${order.errorMessage}`);
 
-            // ✅ Reset order tracking
             this.orderId = undefined;
             this.orderCreated = false;
 
-            // ✅ Stop if executeOnce
             if (this.strategyConfig.executeOnce) {
               this.config.isActive = false;
               this.log("🛑 Strategy stopped after failure (executeOnce mode)");
@@ -108,7 +91,7 @@ export class PriceTargetStrategy extends BaseStrategy {
         }
       }
 
-      // ✅ Only create new order if none exists
+      // Only create new order if none exists
       if (!this.orderCreated) {
         await this.createNewOrder();
       }
@@ -117,68 +100,24 @@ export class PriceTargetStrategy extends BaseStrategy {
     }
   }
 
+  // ✅ UPDATED: Use accurate swap-based pricing
   private async updateCurrentPrice(): Promise<void> {
     try {
-      const policyId = this.config.baseToken.split(".")[0];
+      const price = await PriceUtil.calculateTokenPrice(
+        this.strategyConfig.poolId,
+        this.config.baseToken
+      );
 
-      // ✅ Find pool in database
-      const poolToken = await PoolToken.findOne({
-        where: { policyId },
-      });
-
-      if (!poolToken) {
-        this.log(`⚠️ Pool not found for ${policyId.substring(0, 8)}...`);
+      if (price === null) {
+        this.log("⚠️ Unable to fetch price");
         return;
       }
 
-      // ✅ Get pool data with correct property access
-      const assetAStr = poolToken.get("assetA") as string;
-      const assetBStr = poolToken.get("assetB") as string;
-
-      // ✅ Parse assets
-      const assetA: Asset =
-        assetAStr === "lovelace" || assetAStr === ""
-          ? { policyId: "", tokenName: "" }
-          : assetAStr.length >= 56
-          ? { policyId: assetAStr.slice(0, 56), tokenName: assetAStr.slice(56) }
-          : { policyId: "", tokenName: "" };
-
-      const assetB: Asset =
-        assetBStr === "lovelace" || assetBStr === ""
-          ? { policyId: "", tokenName: "" }
-          : assetBStr.length >= 56
-          ? { policyId: assetBStr.slice(0, 56), tokenName: assetBStr.slice(56) }
-          : { policyId: "", tokenName: "" };
-
-      // ✅ Get pool from DEX
-      const pool = await blockfrostAdapter.getV2PoolByPair(assetA, assetB);
-
-      if (!pool) {
-        this.log("⚠️ Pool not found on DEX");
-        return;
-      }
-
-      // ✅ Get LIVE price
-      const [priceA, priceB] = await blockfrostAdapter.getV2PoolPrice({ pool });
-
-      const isAAda = assetAStr === "lovelace" || assetAStr === "";
-      const isBAda = assetBStr === "lovelace" || assetBStr === "";
-
-      if (isAAda && !isBAda) {
-        this.currentPrice = Number(
-          Big(priceB.toString()).div(1_000_000).toString()
-        );
-      } else if (isBAda && !isAAda) {
-        this.currentPrice = Number(
-          Big(priceA.toString()).div(1_000_000).toString()
-        );
-      }
-
+      this.currentPrice = price;
       this.lastPriceCheck = new Date();
+
       this.log(
-        `📊 Current price: ${this.currentPrice?.toFixed(6)} ${
-          this.config.quoteToken
-        }`
+        `📊 Current price: ${this.currentPrice} ${this.config.quoteToken}`
       );
     } catch (error) {
       this.log(`❌ Error fetching price: ${(error as Error).message}`);

@@ -10,6 +10,7 @@ export interface StrategyConfig {
   baseToken: string;
   quoteToken: string;
   isActive: boolean;
+  poolId: string;
 }
 
 export abstract class BaseStrategy {
@@ -30,11 +31,19 @@ export abstract class BaseStrategy {
     isBuy: boolean;
     amount: number;
   }) {
+    // ✅ Get poolId from strategy config (for PriceTargetStrategy)
+    const poolId = (this.config as any).poolId || this.config.poolId;
+
+    if (!poolId) {
+      throw new Error("Pool ID is required for creating orders");
+    }
+
     return await tradingBotService.createOrder({
       walletAddress: this.config.walletAddress,
       tradingPair: this.config.tradingPair,
       baseToken: this.config.baseToken,
       quoteToken: this.config.quoteToken,
+      poolId,
       ...orderData,
     });
   }

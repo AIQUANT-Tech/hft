@@ -3,11 +3,13 @@ import { disconnectWallet, ConnectWallet } from "@/redux/walletSlice";
 import { BrowserWallet, type Wallet } from "@meshsdk/core";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch } from "@/redux/store"; // ✅ Add this import
 import { toast } from "sonner";
 import Popup from "./Popup";
+import { authConnect, logoutUser } from "../redux/authSlice";
 
 const WalletConnect = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>(); // ✅ Type the dispatch
   const walletAddress = useSelector(
     (state: RootState) => state.wallet.walletAddress
   );
@@ -26,7 +28,7 @@ const WalletConnect = () => {
     try {
       const wallet = await BrowserWallet.enable(walletId);
 
-      // Get Only native balance ADA
+      // Get balance
       const balances = await wallet.getBalance();
       const lovelaceAsset = balances.find((asset) => asset.unit === "lovelace");
       const adaBalance =
@@ -35,22 +37,34 @@ const WalletConnect = () => {
           : 0;
 
       const address = (await wallet.getChangeAddress()) || "N/A";
-      dispatch(
-        ConnectWallet({ walletId, address, BalanceAda: adaBalance.toString() })
-      );
-      setPopupOpen(false);
 
-      toast.success("Wallet connected successfully!", {
-        closeButton: true,
-      });
+      // ✅ 1. Store in wallet slice first
+      dispatch(
+        ConnectWallet({
+          walletId,
+          address,
+          BalanceAda: adaBalance.toString(),
+        })
+      );
+
+      // ✅ 2. Authenticate with backend and WAIT for completion
+      const result = await dispatch(authConnect(address)).unwrap();
+
+      // ✅ 3. Show success message
+      toast.success(
+        result.isNewUser
+          ? "🎉 Welcome! Account created successfully"
+          : "👋 Welcome back!",
+        { closeButton: true }
+      );
+
+      setPopupOpen(false);
     } catch (error) {
       if (error instanceof Error) {
         console.log(error);
         toast.error(
           "Please activate 'Connect as DApp Account' in your wallet",
-          {
-            closeButton: true,
-          }
+          { closeButton: true }
         );
       } else {
         toast.error("An unknown error occurred", {
@@ -61,10 +75,24 @@ const WalletConnect = () => {
   };
 
   const disconnect = async () => {
-    dispatch(disconnectWallet());
-    toast.info("Wallet disconnected", {
-      closeButton: true,
-    });
+    try {
+      // ✅ 1. Logout from backend (clears cookie)
+      await dispatch(logoutUser()).unwrap();
+
+      // ✅ 2. Clear wallet state
+      dispatch(disconnectWallet());
+
+      toast.info("Wallet disconnected", {
+        closeButton: true,
+      });
+    } catch (error) {
+      console.error("Disconnect error:", error);
+      // Still disconnect locally even if backend fails
+      dispatch(disconnectWallet());
+      toast.info("Wallet disconnected", {
+        closeButton: true,
+      });
+    }
   };
 
   // Format balance with commas
