@@ -584,7 +584,6 @@ Cookies: <jwt_token>
 "id": "uuid",
 "name": "Buy MIN Dip",
 "tradingPair": "MIN-ADA",
-"isActive": true,
 "currentPrice": 0.000000009619,
 "targetPrice": 0.000000009,
 "conditionMet": false

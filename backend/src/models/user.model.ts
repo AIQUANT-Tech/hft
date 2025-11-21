@@ -11,7 +11,6 @@ export interface UserAttributes {
   email?: string;
   avatarUrl?: string;
   bio?: string;
-  isActive: boolean;
   lastLoginAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
@@ -32,7 +31,6 @@ export class User
   declare email?: string;
   declare avatarUrl?: string;
   declare bio?: string;
-  declare isActive: boolean;
   declare lastLoginAt?: Date;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
@@ -72,12 +70,6 @@ User.init(
     bio: {
       type: DataTypes.TEXT,
       allowNull: true,
-    },
-    isActive: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: true,
-      field: "is_active",
     },
     lastLoginAt: {
       type: DataTypes.DATE,

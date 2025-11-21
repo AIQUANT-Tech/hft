@@ -28,11 +28,10 @@ export default function Navigation() {
 
   return (
     <nav
-      className={`sticky top-0 z-50 shadow-lg backdrop-blur-md border-b transition-colors ${
-        isDark
+      className={`sticky top-0 z-50 shadow-lg backdrop-blur-md border-b transition-colors ${isDark
           ? "bg-slate-900/95 border-slate-700/50"
           : "bg-white/95 border-gray-200"
-      }`}
+        }`}
     >
       <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex justify-between items-center flex-wrap gap-4">
@@ -41,11 +40,10 @@ export default function Navigation() {
             <div className="flex items-center gap-3">
               {/* Logo icon */}
               <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  isDark
+                className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark
                     ? "bg-linear-to-br from-purple-500 to-pink-500"
                     : "bg-linear-to-br from-blue-500 to-cyan-500"
-                } shadow-lg`}
+                  } shadow-lg`}
               >
                 <span className="text-xl">📈</span>
               </div>
@@ -53,18 +51,16 @@ export default function Navigation() {
               {/* Logo text */}
               <div>
                 <h1
-                  className={`text-xl sm:text-2xl font-black ${
-                    isDark
+                  className={`text-xl sm:text-2xl font-black ${isDark
                       ? "bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"
                       : "bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent"
-                  }`}
+                    }`}
                 >
-                  Cardano HFT
+                  ADA VELOCITY
                 </h1>
                 <p
-                  className={`text-xs ${
-                    isDark ? "text-slate-400" : "text-gray-500"
-                  }`}
+                  className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"
+                    }`}
                 >
                   High-Frequency Trading
                 </p>
@@ -78,15 +74,14 @@ export default function Navigation() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold transition-all text-sm sm:text-base flex items-center gap-2 ${
-                  isActive(item.path)
+                className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold transition-all text-sm sm:text-base flex items-center gap-2 ${isActive(item.path)
                     ? isDark
                       ? "bg-linear-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30 scale-105"
                       : "bg-linear-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30 scale-105"
                     : isDark
-                    ? "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white hover:scale-105"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900 hover:scale-105"
-                }`}
+                      ? "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white hover:scale-105"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900 hover:scale-105"
+                  }`}
               >
                 <span className="text-lg">{item.icon}</span>
                 <span className="hidden sm:inline">{item.label}</span>
@@ -99,11 +94,10 @@ export default function Navigation() {
             {/* Theme toggle */}
             <button
               onClick={handleToggleTheme}
-              className={`p-2.5 sm:p-3 rounded-xl font-medium transition-all hover:scale-110 ${
-                isDark
+              className={`p-2.5 sm:p-3 rounded-xl font-medium transition-all hover:scale-110 ${isDark
                   ? "bg-slate-800 hover:bg-slate-700 text-yellow-400"
                   : "bg-gray-100 hover:bg-gray-200 text-orange-500"
-              }`}
+                }`}
               title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
               aria-pressed={isDark}
               aria-label="Toggle dark mode"

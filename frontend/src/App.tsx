@@ -15,6 +15,8 @@ import { Toaster } from "sonner";
 import OrdersPage from "./pages/OrdersPage";
 import { fetchCurrentUser } from "./redux/authSlice";
 import Footer from "./components/Footer";
+import NotFoundPage from "./components/NotFoundPage";
+import ProfilePage from "./components/ProfilePage";
 
 export const WalletContext = React.createContext<BrowserWallet | null>(null);
 
@@ -134,6 +136,8 @@ function App() {
                   <Route path="/wallets" element={<WalletManagementPage />} />
                   <Route path="/strategies" element={<StrategiesPage />} />
                   <Route path="/orders" element={<OrdersPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="*" element={<NotFoundPage />} />
                 </Routes>
               </div>
             </main>

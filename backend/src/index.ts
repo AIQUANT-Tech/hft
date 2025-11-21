@@ -15,6 +15,7 @@ import tradingBotRoutes from "./routes/tradingBot.routes.js";
 import strategyRoutes from "./routes/strategy.routes.js";
 import ordersRoutes from "./routes/orders.routes.js";
 import authRoutes from "./routes/auth.routes.js";
+import profileRoutes from "./routes/profile.routes.js";
 import { strategyManager } from "./services/strategyManager.service.js";
 import { databaseService } from "./services/database.service.js";
 import { syncAllPools } from "./jobs/syncPoolsJob.js";
@@ -81,6 +82,7 @@ dotenv.config();
   app.use("/api/strategy", strategyRoutes);
   app.use("/api/auth", authRoutes);
   app.use("/api/orders", ordersRoutes);
+  app.use("/api/profile", profileRoutes);
 
   await strategyManager.start();
   await tradingBotService.start();

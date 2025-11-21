@@ -87,4 +87,42 @@ router.delete("/:id", authenticateJWT, async (req, res) => {
   }
 });
 
+// Retry failed order
+router.post("/:id/retry", authenticateJWT, async (req, res) => {
+  try {
+    const order = await TradeOrder.findByPk(req.params.id);
+
+    if (!order) {
+      res.status(404).json({
+        success: false,
+        error: "Order not found",
+      });
+      return;
+    }
+
+    if (order.status !== "failed") {
+      res.status(400).json({
+        success: false,
+        error: "Only failed orders can be retried",
+      });
+      return;
+    }
+
+    order.status = "pending";
+    order.errorMessage = "";
+    await order.save();
+
+    res.json({
+      success: true,
+      message: "Order retried successfully",
+      order,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: (error as Error).message,
+    });
+  }
+});
+
 export default router;

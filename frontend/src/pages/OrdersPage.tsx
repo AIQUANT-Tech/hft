@@ -95,6 +95,18 @@ export default function OrdersPage() {
     }
   };
 
+  const retryOrder = async (orderId: string) => {
+    try {
+      await axios.post(`${API_URL}/api/orders/${orderId}/retry`, {}, {
+        withCredentials: true,
+      });
+      toast.success("Order retry initiated");
+      fetchOrders();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Failed to retry order");
+    }
+  };
+
   const filteredOrders = orders.filter((order) => {
     if (filter === "all") return true;
     return order.status === filter;
@@ -327,6 +339,12 @@ export default function OrdersPage() {
                           🗑️ Delete
                         </button>
                       )}
+
+                    {(order.status === "failed") && (
+                      <button onClick={() => retryOrder(order.id)} className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all hover:scale-105 shadow-md">
+                        🔄 Retry
+                      </button>
+                    )}
                   </div>
                 </div>
 

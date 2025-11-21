@@ -22,13 +22,13 @@ router.post("/connect", async (req, res) => {
     }
 
     let user = await User.findOne({ where: { walletAddress } });
-
+    let newUser = false;
     if (!user) {
       user = await User.create({
         walletAddress,
-        isActive: true,
         lastLoginAt: new Date(),
       });
+      newUser = true;
       console.log(`✅ New user created: ${walletAddress}`);
     } else {
       await user.update({ lastLoginAt: new Date() });
@@ -59,7 +59,7 @@ router.post("/connect", async (req, res) => {
         bio: user.get("bio"),
         createdAt: user.get("createdAt"),
       },
-      isNewUser: !user.get("displayName"),
+      isNewUser: newUser,
     });
   } catch (error) {
     console.error("Auth error:", error);

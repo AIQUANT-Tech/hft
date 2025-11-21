@@ -11,3 +11,14 @@ export const formatPrice = (price: string | number): string => {
 
   return `₳${trimmed}`;
 };
+
+export const generateAvatarUrl = (name: string): string => {
+  if (!name) return "";
+
+  // Using DiceBear API - free avatar generator
+  // Available styles: adventurer, avataaars, bottts, identicon, initials, etc.
+  const style = "initials"; // Clean, professional initials
+  const seed = encodeURIComponent(name);
+
+  return `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=3b82f6,06b6d4,8b5cf6`;
+};

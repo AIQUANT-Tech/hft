@@ -51,14 +51,6 @@ export const authenticateJWT = async (
       return;
     }
 
-    if (!user.isActive) {
-      res.status(401).json({
-        success: false,
-        error: "User account is inactive",
-      });
-      return;
-    }
-
     // Attach user info to request
     req.user = {
       userId: payload.userId,
