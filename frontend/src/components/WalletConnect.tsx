@@ -7,11 +7,13 @@ import type { AppDispatch } from "@/redux/store";
 import { toast } from "sonner";
 import Popup from "./Popup";
 import { authConnect, logoutUser } from "../redux/authSlice";
-import { UserPen } from 'lucide-react';
+import { UserPen } from "lucide-react";
 import { Link } from "react-router-dom";
+import { selectIsDark } from "@/redux/themeSlice";
 
 const WalletConnect = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const isDark = useSelector(selectIsDark);
   const walletAddress = useSelector(
     (state: RootState) => state.wallet.walletAddress
   );
@@ -108,14 +110,27 @@ const WalletConnect = () => {
   };
 
   return (
-    <div className="flex items-center gap-4">
+    <div className={`flex items-center gap-4 rounded-xl`}>
       {!walletAddress ? (
         // Connect Wallet Button - Not Connected
         <button
           onClick={connectWallet}
-          className="group relative inline-flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-[#0033AD] to-[#00A3FF] text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden"
+          className={`group relative inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden ${
+            isDark
+              ? "bg-linear-to-r from-purple-500 to-pink-500 text-white"
+              : "bg-linear-to-r from-blue-600 to-cyan-600 text-white"
+          }`}
         >
-          <span className="absolute inset-0 bg-linear-to-r from-[#00A3FF] to-[#0033AD] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+          {/* Hover effect overlay */}
+          <span
+            className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
+              isDark
+                ? "bg-linear-to-r from-purple-600 to-pink-600"
+                : "bg-linear-to-r from-blue-700 to-cyan-700"
+            }`}
+          ></span>
+
+          {/* Wallet Icon */}
           <svg
             className="w-5 h-5 relative z-10"
             fill="none"
@@ -129,27 +144,53 @@ const WalletConnect = () => {
               d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
             />
           </svg>
+
+          {/* Button Text */}
           <span className="relative z-10">Connect Wallet</span>
         </button>
       ) : (
         // Wallet Connected - Show Address and Balance
         <div className="flex items-center gap-3">
           {/* Balance Card */}
-          <div className="group relative bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl px-4 py-2.5 border border-blue-200/50 dark:border-blue-700/50 shadow-md hover:shadow-lg transition-all duration-300">
+          <div
+            className={`group relative bg-linear-to-br rounded-xl px-4 py-2.5 border shadow-md hover:shadow-lg transition-all duration-300 ${
+              isDark
+                ? "from-blue-900/20 to-indigo-900/20 border-blue-700/50"
+                : "from-blue-50 to-indigo-50 border-blue-200/50"
+            }`}
+          >
             <div className="flex items-center gap-2">
               {/* ADA Symbol */}
               <div className="flex items-center justify-center w-8 h-8 bg-linear-to-br from-[#0033AD] to-[#00A3FF] rounded-lg shadow-sm">
-                <span className="text-white font-bold text-sm">₳</span>
+                <span
+                  className={`font-bold text-sm ${
+                    isDark ? "text-gray-200" : "text-white"
+                  }`}
+                >
+                  ₳
+                </span>
               </div>
 
               {/* Balance Info */}
               <div className="flex flex-col">
-                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">
+                <span
+                  className={`text-xs font-medium uppercase tracking-wider ${
+                    isDark ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   Balance
                 </span>
-                <span className="text-lg font-bold text-gray-900 dark:text-white">
+                <span
+                  className={`text-lg font-bold ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
                   {formatBalance(balance)}{" "}
-                  <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
+                  <span
+                    className={`text-sm font-normal ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
                     ADA
                   </span>
                 </span>
@@ -163,7 +204,11 @@ const WalletConnect = () => {
           {/* Wallet Address Badge */}
           <div className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 shadow-md hover:shadow-lg transition-all duration-300">
             {/* Wallet Icon */}
-            <Link className="flex items-center justify-center w-8 h-8 bg-linear-to-br from-green-400 to-emerald-500 rounded-lg cursor-pointer" to="/profile" title="Go to Profile">
+            <Link
+              className="flex items-center justify-center w-8 h-8 bg-linear-to-br from-green-400 to-emerald-500 rounded-lg cursor-pointer"
+              to="/profile"
+              title="Go to Profile"
+            >
               <UserPen className="text-white" />
             </Link>
 

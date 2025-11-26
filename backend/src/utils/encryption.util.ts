@@ -56,6 +56,7 @@ export class EncryptionUtil {
       const [ivHex, authTagHex, encrypted] = parts;
 
       // ✅ ALWAYS use owner address to derive key
+      // first check if owner is correct only
       const derivedKey = this.deriveKey(ownerAddress);
 
       const iv = Buffer.from(ivHex, "hex");

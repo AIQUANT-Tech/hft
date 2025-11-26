@@ -1,12 +1,13 @@
 // src/services/cardano.service.ts
 
-import { Lucid, Blockfrost, Network } from "lucid-cardano";
+import { Lucid, Blockfrost, Network, toText } from "lucid-cardano";
 import fs from "fs/promises";
 import path from "path";
 import { EncryptionUtil } from "../utils/encryption.util.js";
 import { ValidationUtil } from "../utils/validation.util.js";
 import config from "../config/environment.js";
 import { logger } from "./logger.service.js";
+import { getAdaPriceCached } from "../utils/helper.js";
 
 interface WithdrawAsset {
   asset: string; // "ADA" or asset unit
@@ -539,6 +540,70 @@ export class CardanoService {
     } catch (error: any) {
       logger.error(`Withdrawal failed: ${error.message}`, undefined, "wallet");
       throw new Error(`Failed to withdraw: ${error.message}`);
+    }
+  }
+
+  static async getWalletHoldings(walletAddress: string) {
+    try {
+      const lucid = await this.getLucidInstance();
+      const utxos = await lucid.utxosAt(walletAddress);
+
+      const assetsMap: Record<
+        string,
+        { policyId: string; assetName: string; amount: bigint }
+      > = {};
+
+      for (const utxo of utxos) {
+        // ADA amount is always included in lovelace
+        const adaAmount = utxo.assets["lovelace"] || 0n;
+
+        // Add ADA to assetsMap with special treatment
+        const existingAda = assetsMap["lovelace"] || {
+          policyId: "",
+          assetName: "lovelace",
+          amount: 0n,
+        };
+        existingAda.amount += adaAmount;
+        assetsMap["lovelace"] = existingAda;
+
+        // Loop other tokens if any
+        for (const unit in utxo.assets) {
+          if (unit === "lovelace") continue; // skip ADA (already added)
+
+          const amount = utxo.assets[unit];
+          if (!assetsMap[unit]) {
+            // Parse policyId (first 56 hex chars) and assetName (rest)
+            const policyId = unit.slice(0, 56);
+            const assetNameHex = unit.slice(56);
+            assetsMap[unit] = {
+              policyId,
+              assetName: assetNameHex,
+              amount,
+            };
+          } else {
+            assetsMap[unit].amount += amount;
+          }
+        }
+      }
+
+      // Convert assetsMap to array grouped by token symbol (you may map policyId to symbol from DB or config)
+      // Here, we just return policyId and hex assetName for now as tokenSymbol/tokenName require extra lookup
+      const holdings = Object.entries(assetsMap).map(
+        ([unit, { policyId, assetName, amount }]) => ({
+          tokenSymbol: unit === "lovelace" ? "ADA" : unit, // replace with symbol lookup for tokens
+          tokenName: unit === "lovelace" ? "ADA" : toText(assetName), // ideally lookup human-friendly names from DB/external
+          policyId,
+          assetName,
+          amount: amount.toString(),
+          priceChange24h: "0", // You can enrich this later with price API calls
+          walletAddress,
+        })
+      );
+
+      return holdings;
+    } catch (error) {
+      console.error("Failed to get wallet holdings:", error);
+      return [];
     }
   }
 }

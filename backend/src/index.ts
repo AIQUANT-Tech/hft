@@ -25,6 +25,13 @@ import environment from "./config/environment.js";
 import User from "./models/user.model.js";
 import cookieParser from "cookie-parser";
 import { logger } from "./services/logger.service.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
+// src/models/index.ts
+
+import { Portfolio } from "./models/portfolio.model.js";
+import { Strategy } from "./models/strategy.model.js";
+import { ActivityLog } from "./models/activityLog.model.js";
+import { PortfolioHistory } from "./models/portfolioHistory.model.js";
 
 dotenv.config();
 
@@ -49,11 +56,15 @@ dotenv.config();
 
   // ✅ Initialize logger with WebSocket
   logger.setSocketIO(io);
-
+  // Sync All Models
   await sequelize.authenticate();
   await PoolToken.sync();
   await TradeOrder.sync();
   await User.sync();
+  await Portfolio.sync();
+  await Strategy.sync();
+  await ActivityLog.sync();
+  await PortfolioHistory.sync();
   console.log("✅ Database connection OK");
 
   // await databaseService.initialize();
@@ -83,6 +94,7 @@ dotenv.config();
   app.use("/api/auth", authRoutes);
   app.use("/api/orders", ordersRoutes);
   app.use("/api/profile", profileRoutes);
+  app.use("/api/dashboard", dashboardRoutes);
 
   await strategyManager.start();
   await tradingBotService.start();

@@ -8,7 +8,7 @@ export interface LogMessage {
   type: "info" | "success" | "warning" | "error";
   message: string;
   strategyName?: string;
-  category?: "strategy" | "order" | "wallet" | "system";
+  category?: "strategy" | "order" | "wallet" | "system" | "api";
 }
 
 class LoggerService {

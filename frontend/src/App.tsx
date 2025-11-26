@@ -1,6 +1,11 @@
 // src/App.tsx
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { BrowserWallet } from "@meshsdk/core";
 import { useSelector, useDispatch } from "react-redux";
 import type { AppDispatch, RootState } from "./redux/store";
@@ -17,6 +22,8 @@ import { fetchCurrentUser } from "./redux/authSlice";
 import Footer from "./components/Footer";
 import NotFoundPage from "./components/NotFoundPage";
 import ProfilePage from "./components/ProfilePage";
+import LandingPage from "./pages/LandingPage";
+import DashboardPage from "./pages/DashboardPage";
 
 export const WalletContext = React.createContext<BrowserWallet | null>(null);
 
@@ -30,6 +37,7 @@ function App() {
   const { loading: authLoading } = useSelector(
     (state: RootState) => state.auth
   ); // ✅ Add auth state
+
   useEffect(() => {
     dispatch(fetchCurrentUser());
   }, [dispatch]);
@@ -91,6 +99,17 @@ function App() {
     }
   };
 
+  // Protected Route Component
+  function ProtectedRoute({ children }: { children: React.ReactNode }) {
+    const { walletId } = useSelector((state: RootState) => state.wallet);
+
+    if (!walletId) {
+      return <Navigate to="/" replace />;
+    }
+
+    return <>{children}</>;
+  }
+
   // ✅ Show loading while checking auth
   if (authLoading) {
     return (
@@ -108,10 +127,11 @@ function App() {
       <Router>
         {/* Improved background with gradient and pattern */}
         <div
-          className={`min-h-screen transition-colors duration-300 relative overflow-hidden bg-linear-to-br ${isDark
-            ? "from-slate-950 via-slate-900 to-slate-950"
-            : "from-gray-50 via-blue-50 to-cyan-50"
-            } `}
+          className={`min-h-screen transition-colors duration-300 relative overflow-hidden bg-linear-to-br ${
+            isDark
+              ? "from-slate-950 via-slate-900 to-slate-950"
+              : "from-gray-50 via-blue-50 to-cyan-50"
+          } `}
         >
           {/* Subtle animated background pattern */}
           <div className="absolute inset-0 opacity-30 dark:opacity-10">
@@ -122,21 +142,67 @@ function App() {
 
           {/* Content wrapper with backdrop blur */}
           <div className="relative z-10">
-            {/* Navigation - Sticky and Full Width */}
+            {/* Show navbar only when wallet is connected */}
             <Navigation />
 
             {/* Main Content with subtle container styling */}
-            <main
-              className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8`}
-            >
+            <main className={`mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8`}>
               {/* Page transition wrapper */}
               <div className="animate-fadeIn">
                 <Routes>
-                  <Route path="/" element={<TokensPage />} />
-                  <Route path="/wallets" element={<WalletManagementPage />} />
-                  <Route path="/strategies" element={<StrategiesPage />} />
-                  <Route path="/orders" element={<OrdersPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/" element={<LandingPage />} />
+
+                  {/* Protected Dashboard Routes */}
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <ProfilePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/tokens"
+                    element={
+                      <ProtectedRoute>
+                        <TokensPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/strategies"
+                    element={
+                      <ProtectedRoute>
+                        <StrategiesPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/orders"
+                    element={
+                      <ProtectedRoute>
+                        <OrdersPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/wallets"
+                    element={
+                      <ProtectedRoute>
+                        <WalletManagementPage />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* 404 Page */}
                   <Route path="*" element={<NotFoundPage />} />
                 </Routes>
               </div>

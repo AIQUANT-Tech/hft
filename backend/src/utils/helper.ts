@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export const formatPrice = (price: string | number): string => {
   const priceNum = typeof price === "string" ? parseFloat(price) : price;
   if (!priceNum || priceNum === 0) return "N/A";
@@ -22,3 +24,21 @@ export const generateAvatarUrl = (name: string): string => {
 
   return `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=3b82f6,06b6d4,8b5cf6`;
 };
+
+let cachedAdaPrice: number = 0;
+let lastFetchTime = 0;
+
+export async function getAdaPriceCached(): Promise<number> {
+  const now = Date.now();
+  if (cachedAdaPrice && now - lastFetchTime < 60 * 1000) {
+    return cachedAdaPrice;
+  }
+
+  const response = await axios.get(
+    "https://api.coingecko.com/api/v3/simple/price?ids=cardano&vs_currencies=usd"
+  );
+
+  cachedAdaPrice = response.data?.cardano?.usd || 0;
+  lastFetchTime = now;
+  return cachedAdaPrice;
+}

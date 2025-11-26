@@ -1,4 +1,4 @@
-# Cardano High-Frequency Trading (HFT) Platform
+# Cardano High-Frequency Trading (ADA VELOCITY) Platform
 
 > **A full-stack automated trading platform for Cardano blockchain with advanced algorithmic trading strategies**
 
