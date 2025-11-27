@@ -3,7 +3,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const API_URL = import.meta.env.VITE_SERVER_URL;
 
 // ✅ Updated interface to match your DB response
 export interface Token {
@@ -62,7 +62,7 @@ export const fetchTokens = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/tokens`, {});
+      const response = await axios.get(`${API_URL}/api/tokens`, {});
 
       const tokenCount = response.data.count || 0;
       console.log(`✅ Fetched ${tokenCount} tokens from database`);
@@ -89,7 +89,7 @@ export const searchTokens = createAsyncThunk(
       console.log(`🔍 Searching tokens: "${query}"`);
 
       // Search by symbol or name
-      const response = await axios.get(`${API_BASE_URL}/api/tokens`, {
+      const response = await axios.get(`${API_URL}/api/tokens`, {
         params: { page: 1, count: 100, offset: 0 },
       });
 
@@ -133,7 +133,7 @@ export const loadMoreTokens = createAsyncThunk(
         `🔍 Loading more tokens: offset=${nextOffset}, count=${count}`
       );
 
-      const response = await axios.get(`${API_BASE_URL}/api/tokens`, {
+      const response = await axios.get(`${API_URL}/api/tokens`, {
         params: { page: currentPage, count, offset: nextOffset },
       });
 

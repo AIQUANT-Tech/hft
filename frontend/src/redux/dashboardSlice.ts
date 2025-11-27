@@ -6,8 +6,7 @@ import {
 
 import axios from "axios";
 
-const API_URL = "http://localhost:8080";
-
+const API_URL = import.meta.env.VITE_SERVER_URL;
 interface PortfolioData {
   // define exact types if available, otherwise use 'any'
   portfolio: any;

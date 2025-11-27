@@ -9,7 +9,7 @@ import { useSelector } from "react-redux";
 import { selectAuth } from "../redux/authSlice";
 import { selectIsDark } from "@/redux/themeSlice";
 
-const API_URL = "http://localhost:8080";
+const API_URL = import.meta.env.VITE_SERVER_URL;
 
 interface WalletBalance {
   address: string;
@@ -323,10 +323,10 @@ export default function WalletManagementPage() {
     const asset = balance.assets?.find((a: any) => a.unit === assetUnit);
     return asset
       ? {
-        name: assetUnit.substring(0, 20) + "...",
-        balance: asset.quantity,
-        decimals: 0,
-      }
+          name: assetUnit.substring(0, 20) + "...",
+          balance: asset.quantity,
+          decimals: 0,
+        }
       : null;
   };
 
@@ -382,10 +382,18 @@ export default function WalletManagementPage() {
   if (!isAuthenticated || !user) {
     return (
       <div className="text-center py-20">
-        <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 ${isDark ? "bg-slate-800" : "bg-gray-100"}`}>
+        <div
+          className={`w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 ${
+            isDark ? "bg-slate-800" : "bg-gray-100"
+          }`}
+        >
           <span className="text-5xl">👛</span>
         </div>
-        <h3 className={`text-2xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
+        <h3
+          className={`text-2xl font-bold mb-2 ${
+            isDark ? "text-white" : "text-gray-900"
+          }`}
+        >
           Connect Your Wallet
         </h3>
         <p className={`text-sm ${isDark ? "text-gray-200" : "text-gray-600"}`}>
@@ -398,20 +406,26 @@ export default function WalletManagementPage() {
   return (
     <div>
       <div
-        className={`mb-6 p-6 bg-linear-to-r rounded-2xl border ${isDark
-          ? "from-slate-900 to-slate-800 border-white/10"
-          : "from-gray-100 to-gray-200 border-gray-300"
-          }`}
+        className={`mb-6 p-6 bg-linear-to-r rounded-2xl border ${
+          isDark
+            ? "from-slate-900 to-slate-800 border-white/10"
+            : "from-gray-100 to-gray-200 border-gray-300"
+        }`}
       >
         <div className="flex justify-between items-center flex-wrap gap-4">
           <div>
             <h2
-              className={`text-2xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"
-                }`}
+              className={`text-2xl font-bold mb-2 ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
             >
               👛 Wallet Management
             </h2>
-            <p className={`text-sm ${isDark ? "text-gray-200" : "text-gray-600"}`}>
+            <p
+              className={`text-sm ${
+                isDark ? "text-gray-200" : "text-gray-600"
+              }`}
+            >
               Create, import, and manage your Cardano wallets
             </p>
           </div>
@@ -437,7 +451,11 @@ export default function WalletManagementPage() {
           <div className="w-12 h-12 border-4 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
         </div>
       ) : wallets.length === 0 ? (
-        <div className={`text-center py-20 ${isDark ? "text-gray-200" : "text-gray-600"}`}>
+        <div
+          className={`text-center py-20 ${
+            isDark ? "text-gray-200" : "text-gray-600"
+          }`}
+        >
           <p className="text-xl mb-4">No wallets found</p>
           <p className="text-sm">Create or import a wallet to get started</p>
         </div>
@@ -446,7 +464,11 @@ export default function WalletManagementPage() {
           {wallets.map((address) => (
             <div
               key={address}
-              className={`p-6 bg-linear-to-br border rounded-2xl shadow-lg hover:scale-105 transition-all ${isDark ? "from-slate-900 to-slate-800 border-white/10" : "from-white to-gray-50 border-gray-300"}`}
+              className={`p-6 bg-linear-to-br border rounded-2xl shadow-lg hover:scale-105 transition-all ${
+                isDark
+                  ? "from-slate-900 to-slate-800 border-white/10"
+                  : "from-white to-gray-50 border-gray-300"
+              }`}
             >
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-full bg-linear-to-r from-[#0033AD] to-[#00A3FF] flex items-center justify-center text-white font-bold text-xl">
@@ -454,19 +476,29 @@ export default function WalletManagementPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p
-                    className={`font-bold truncate ${isDark ? "text-white" : "text-gray-900"}`}
+                    className={`font-bold truncate ${
+                      isDark ? "text-white" : "text-gray-900"
+                    }`}
                     title={address}
                   >
                     {address.substring(0, 15)}...
                   </p>
-                  <p className={`text-sm ${isDark ? "text-gray-200" : "text-gray-600"}`}>
+                  <p
+                    className={`text-sm ${
+                      isDark ? "text-gray-200" : "text-gray-600"
+                    }`}
+                  >
                     Preprod
                   </p>
                 </div>
               </div>
 
               <div className="mb-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                <p className={`text-xs mb-1 ${isDark ? "text-gray-200" : "text-gray-600"}`}>
+                <p
+                  className={`text-xs mb-1 ${
+                    isDark ? "text-gray-200" : "text-gray-600"
+                  }`}
+                >
                   Balance
                 </p>
                 <p className="text-blue-400 font-bold text-lg">
@@ -502,7 +534,11 @@ export default function WalletManagementPage() {
                     navigator.clipboard.writeText(address);
                     toast.success("Address copied!");
                   }}
-                  className={`px-4 py-2 rounded-lg transition-all ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-gray-900 hover:bg-gray-400"}`}
+                  className={`px-4 py-2 rounded-lg transition-all ${
+                    isDark
+                      ? "bg-gray-700 text-white hover:bg-gray-600"
+                      : "bg-gray-300 text-gray-900 hover:bg-gray-400"
+                  }`}
                   title="Copy address"
                 >
                   📋
@@ -533,22 +569,44 @@ export default function WalletManagementPage() {
       {/* Create Wallet Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className={`rounded-2xl p-8 max-w-md w-full border ${isDark ? "bg-slate-900 border-white/10" : "bg-white border-gray-300"}`}>
-            <h3 className={`text-2xl font-bold mb-4 ${isDark ? "text-white" : "text-gray-900"}`}>
+          <div
+            className={`rounded-2xl p-8 max-w-md w-full border ${
+              isDark
+                ? "bg-slate-900 border-white/10"
+                : "bg-white border-gray-300"
+            }`}
+          >
+            <h3
+              className={`text-2xl font-bold mb-4 ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+            >
               Create New Wallet
             </h3>
 
-            <p className={`text-sm mb-4 ${isDark ? "text-gray-200" : "text-gray-600"}`}>
+            <p
+              className={`text-sm mb-4 ${
+                isDark ? "text-gray-200" : "text-gray-600"
+              }`}
+            >
               A new wallet will be created with a random seed phrase. Make sure
               to save it securely!
             </p>
 
             {newWalletAddress && (
               <div className="mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-                <p className={`text-sm font-semibold mb-2 ${isDark ? "text-green-400" : "text-green-600"}`}>
+                <p
+                  className={`text-sm font-semibold mb-2 ${
+                    isDark ? "text-green-400" : "text-green-600"
+                  }`}
+                >
                   ✅ Wallet Created!
                 </p>
-                <p className={`text-sm font-mono break-all ${isDark ? "text-white" : "text-gray-900"}`}>
+                <p
+                  className={`text-sm font-mono break-all ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
                   {newSeedPhrase}
                 </p>
                 <button
@@ -575,7 +633,11 @@ export default function WalletManagementPage() {
                   setShowCreateModal(false);
                   setNewWalletAddress("");
                 }}
-                className={`px-6 py-3 font-semibold rounded-lg transition-all ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-gray-900 hover:bg-gray-400"}`}
+                className={`px-6 py-3 font-semibold rounded-lg transition-all ${
+                  isDark
+                    ? "bg-gray-700 text-white hover:bg-gray-600"
+                    : "bg-gray-300 text-gray-900 hover:bg-gray-400"
+                }`}
               >
                 Close
               </button>
@@ -587,8 +649,18 @@ export default function WalletManagementPage() {
       {/* Import Wallet Modal */}
       {showImportModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className={`rounded-2xl p-8 max-w-md w-full border ${isDark ? "bg-slate-900 border-white/10" : "bg-white border-gray-300"}`}>
-            <h3 className={`text-2xl font-bold mb-4 ${isDark ? "text-white" : "text-gray-900"}`}>
+          <div
+            className={`rounded-2xl p-8 max-w-md w-full border ${
+              isDark
+                ? "bg-slate-900 border-white/10"
+                : "bg-white border-gray-300"
+            }`}
+          >
+            <h3
+              className={`text-2xl font-bold mb-4 ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+            >
               Import Wallet
             </h3>
 
@@ -597,10 +669,18 @@ export default function WalletManagementPage() {
               value={seedPhrase}
               onChange={(e) => setSeedPhrase(e.target.value)}
               rows={4}
-              className={`w-full px-4 py-3 rounded-lg border mb-4 font-mono text-sm ${isDark ? "bg-slate-800 border-white/10 text-white" : "bg-gray-100 border-gray-300 text-gray-900"}`}
+              className={`w-full px-4 py-3 rounded-lg border mb-4 font-mono text-sm ${
+                isDark
+                  ? "bg-slate-800 border-white/10 text-white"
+                  : "bg-gray-100 border-gray-300 text-gray-900"
+              }`}
             />
 
-            <p className={`text-xs mb-4 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+            <p
+              className={`text-xs mb-4 ${
+                isDark ? "text-gray-400" : "text-gray-500"
+              }`}
+            >
               ⚠️ Your seed phrase will be stored securely on the server. Never
               share it with anyone.
             </p>
@@ -618,7 +698,11 @@ export default function WalletManagementPage() {
                   setShowImportModal(false);
                   setSeedPhrase("");
                 }}
-                className={`px-6 py-3 font-semibold rounded-lg transition-all ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-gray-900 hover:bg-gray-400"}`}
+                className={`px-6 py-3 font-semibold rounded-lg transition-all ${
+                  isDark
+                    ? "bg-gray-700 text-white hover:bg-gray-600"
+                    : "bg-gray-300 text-gray-900 hover:bg-gray-400"
+                }`}
               >
                 Cancel
               </button>
@@ -630,24 +714,56 @@ export default function WalletManagementPage() {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && walletToDelete && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className={`rounded-2xl p-8 max-w-md w-full border ${isDark ? "bg-slate-900 border-white/10" : "bg-white border-gray-300"}`}>
+          <div
+            className={`rounded-2xl p-8 max-w-md w-full border ${
+              isDark
+                ? "bg-slate-900 border-white/10"
+                : "bg-white border-gray-300"
+            }`}
+          >
             <div className="text-center mb-6">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isDark ? "bg-red-500/20" : "bg-red-100"}`}>
+              <div
+                className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                  isDark ? "bg-red-500/20" : "bg-red-100"
+                }`}
+              >
                 <span className="text-4xl">⚠️</span>
               </div>
-              <h3 className={`text-2xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
+              <h3
+                className={`text-2xl font-bold mb-2 ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
                 Delete Wallet?
               </h3>
-              <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+              <p
+                className={`text-sm ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
                 Are you sure you want to delete this wallet?
               </p>
             </div>
 
-            <div className={`mb-6 p-4 rounded-lg ${isDark ? "bg-red-500/10 border-red-500/20" : "bg-red-50 border-red-200"}`}>
-              <p className={`text-xs font-semibold mb-2 ${isDark ? "text-red-400" : "text-red-600"}`}>
+            <div
+              className={`mb-6 p-4 rounded-lg ${
+                isDark
+                  ? "bg-red-500/10 border-red-500/20"
+                  : "bg-red-50 border-red-200"
+              }`}
+            >
+              <p
+                className={`text-xs font-semibold mb-2 ${
+                  isDark ? "text-red-400" : "text-red-600"
+                }`}
+              >
                 ⚠️ WARNING: This action cannot be undone!
               </p>
-              <p className={`text-sm font-mono break-all ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+              <p
+                className={`text-sm font-mono break-all ${
+                  isDark ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
                 {walletToDelete.substring(0, 30)}...
               </p>
             </div>
@@ -658,7 +774,11 @@ export default function WalletManagementPage() {
                   setShowDeleteModal(false);
                   setWalletToDelete(null);
                 }}
-                className={`flex-1 px-6 py-3 font-semibold rounded-lg transition-all ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-gray-900 hover:bg-gray-400"}`}
+                className={`flex-1 px-6 py-3 font-semibold rounded-lg transition-all ${
+                  isDark
+                    ? "bg-gray-700 text-white hover:bg-gray-600"
+                    : "bg-gray-300 text-gray-900 hover:bg-gray-400"
+                }`}
               >
                 Cancel
               </button>
@@ -676,30 +796,66 @@ export default function WalletManagementPage() {
       {/* Fund Wallet Modal */}
       {showFundModal && walletToFund && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className={`rounded-2xl p-8 max-w-md w-full border ${isDark ? "bg-slate-900 border-white/10" : "bg-white border-gray-300"}`}>
+          <div
+            className={`rounded-2xl p-8 max-w-md w-full border ${
+              isDark
+                ? "bg-slate-900 border-white/10"
+                : "bg-white border-gray-300"
+            }`}
+          >
             <div className="text-center mb-6">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isDark ? "bg-green-500/20" : "bg-green-100"}`}>
+              <div
+                className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                  isDark ? "bg-green-500/20" : "bg-green-100"
+                }`}
+              >
                 <span className="text-4xl">💰</span>
               </div>
-              <h3 className={`text-2xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
+              <h3
+                className={`text-2xl font-bold mb-2 ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
                 Fund Wallet
               </h3>
-              <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+              <p
+                className={`text-sm ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
                 Send ADA from your browser wallet
               </p>
             </div>
 
-            <div className={`mb-6 p-4 rounded-lg ${isDark ? "bg-blue-500/10 border-blue-500/20" : "bg-blue-50 border-blue-200"}`}>
-              <p className={`text-xs mb-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+            <div
+              className={`mb-6 p-4 rounded-lg ${
+                isDark
+                  ? "bg-blue-500/10 border-blue-500/20"
+                  : "bg-blue-50 border-blue-200"
+              }`}
+            >
+              <p
+                className={`text-xs mb-1 ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
                 Recipient Address:
               </p>
-              <p className={`text-sm font-mono break-all ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+              <p
+                className={`text-sm font-mono break-all ${
+                  isDark ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
                 {walletToFund.substring(0, 30)}...
               </p>
             </div>
 
             <div className="mb-6">
-              <label className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+              <label
+                className={`block text-sm font-semibold mb-2 ${
+                  isDark ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
                 Amount (ADA)
               </label>
               <input
@@ -709,7 +865,11 @@ export default function WalletManagementPage() {
                 placeholder="Enter amount in ADA (e.g., 10)"
                 value={fundAmount}
                 onChange={(e) => setFundAmount(e.target.value)}
-                className={`w-full px-4 py-3 rounded-lg ${isDark ? "bg-slate-800 border-white/10 text-white" : "bg-gray-100 border-gray-300 text-gray-900"} text-lg font-semibold`}
+                className={`w-full px-4 py-3 rounded-lg ${
+                  isDark
+                    ? "bg-slate-800 border-white/10 text-white"
+                    : "bg-gray-100 border-gray-300 text-gray-900"
+                } text-lg font-semibold`}
               />
               <p className="text-xs text-gray-500 mt-2">
                 💡 Minimum: 1 ADA (network fees apply)
@@ -717,8 +877,18 @@ export default function WalletManagementPage() {
             </div>
 
             {!browserWallet && (
-              <div className={`mb-4 p-3 rounded-lg ${isDark ? "bg-yellow-500/10 border-yellow-500/20" : "bg-yellow-50 border-yellow-200"}`}>
-                <p className={`text-xs ${isDark ? "text-yellow-400" : "text-yellow-600"}`}>
+              <div
+                className={`mb-4 p-3 rounded-lg ${
+                  isDark
+                    ? "bg-yellow-500/10 border-yellow-500/20"
+                    : "bg-yellow-50 border-yellow-200"
+                }`}
+              >
+                <p
+                  className={`text-xs ${
+                    isDark ? "text-yellow-400" : "text-yellow-600"
+                  }`}
+                >
                   ⚠️ Please connect your browser wallet first!
                 </p>
               </div>
@@ -731,7 +901,11 @@ export default function WalletManagementPage() {
                   setWalletToFund("");
                   setFundAmount("");
                 }}
-                className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-gray-900 hover:bg-gray-400"}`}
+                className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+                  isDark
+                    ? "bg-gray-700 text-white hover:bg-gray-600"
+                    : "bg-gray-300 text-gray-900 hover:bg-gray-400"
+                }`}
               >
                 Cancel
               </button>
@@ -754,32 +928,66 @@ export default function WalletManagementPage() {
 
       {/* ✅ Assets Modal */}
       {showAssetsModal && selectedWalletAddress && (
-        <div className={`fixed inset-0 flex items-center justify-center z-50 p-4 ${isDark ? "bg-white/20 backdrop-blur" : "bg-black/80 backdrop-blur"}`}>
-          <div className={`rounded-2xl p-8 max-w-2xl w-full border max-h-[80vh] overflow-y-auto ${isDark ? "border-b border-white/10 bg-slate-800" : "border-b border-gray-300 bg-slate-50"}`}>
+        <div
+          className={`fixed inset-0 flex items-center justify-center z-50 p-4 ${
+            isDark ? "bg-white/20 backdrop-blur" : "bg-black/80 backdrop-blur"
+          }`}
+        >
+          <div
+            className={`rounded-2xl p-8 max-w-2xl w-full border max-h-[80vh] overflow-y-auto ${
+              isDark
+                ? "border-b border-white/10 bg-slate-800"
+                : "border-b border-gray-300 bg-slate-50"
+            }`}
+          >
             <div className={`flex items-center justify-between mb-6`}>
               <div>
-                <h3 className={`text-2xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
+                <h3
+                  className={`text-2xl font-bold mb-2 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
                   📦 Wallet Assets
                 </h3>
-                <p className={`text-sm font-mono ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                <p
+                  className={`text-sm font-mono ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
                   {selectedWalletAddress.substring(0, 20)}...
                 </p>
               </div>
               <button
                 onClick={() => setShowAssetsModal(false)}
-                className={`text-gray-500 hover:text-gray-700 ${isDark ? "text-gray-400 hover:text-gray-200" : ""}`}
+                className={`text-gray-500 hover:text-gray-700 ${
+                  isDark ? "text-gray-400 hover:text-gray-200" : ""
+                }`}
               >
                 ✕
               </button>
             </div>
             {/* ADA Balance */}
-            <div className={`mb-4 p-4 border rounded-lg ${isDark ? "bg-blue-500/10 border-blue-500/20" : "border-blue-200 bg-blue-50"}`}>
+            <div
+              className={`mb-4 p-4 border rounded-lg ${
+                isDark
+                  ? "bg-blue-500/10 border-blue-500/20"
+                  : "border-blue-200 bg-blue-50"
+              }`}
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className={`text-xs mb-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                  <p
+                    className={`text-xs mb-1 ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
                     ADA Balance
                   </p>
-                  <p className={`text-2xl font-bold ${isDark ? "text-blue-400" : "text-blue-600"}`}>
+                  <p
+                    className={`text-2xl font-bold ${
+                      isDark ? "text-blue-400" : "text-blue-600"
+                    }`}
+                  >
                     ₳ {getWalletBalance(selectedWalletAddress)}
                   </p>
                 </div>
@@ -789,12 +997,20 @@ export default function WalletManagementPage() {
 
             {/* Assets List */}
             <div className="space-y-3">
-              <h4 className={`text-lg font-semibold mb-3 ${isDark ? "text-white" : "text-gray-900"}`}>
+              <h4
+                className={`text-lg font-semibold mb-3 ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
                 Native Assets ({getWalletAssets(selectedWalletAddress).length})
               </h4>
 
               {getWalletAssets(selectedWalletAddress).length === 0 ? (
-                <div className={`text-center py-8 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                <div
+                  className={`text-center py-8 ${
+                    isDark ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   <p className="text-lg mb-2">No native assets</p>
                   <p className="text-sm">This wallet only contains ADA</p>
                 </div>
@@ -803,27 +1019,51 @@ export default function WalletManagementPage() {
                   (asset: any, index: number) => (
                     <div
                       key={index}
-                      className={`p-4 rounded-lg ${isDark ? "bg-slate-800 border-white/10" : "bg-gray-50 border-gray-200"}`}
+                      className={`p-4 rounded-lg ${
+                        isDark
+                          ? "bg-slate-800 border-white/10"
+                          : "bg-gray-50 border-gray-200"
+                      }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <p className={`font-semibold text-sm mb-1 ${isDark ? "text-white" : "text-gray-900"}`}>
+                          <p
+                            className={`font-semibold text-sm mb-1 ${
+                              isDark ? "text-white" : "text-gray-900"
+                            }`}
+                          >
                             {asset.unit.substring(0, 16)}...
                           </p>
-                          <p className={`text-xs font-mono break-all ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                          <p
+                            className={`text-xs font-mono break-all ${
+                              isDark ? "text-gray-400" : "text-gray-600"
+                            }`}
+                          >
                             Policy: {asset.unit.substring(0, 56)}
                           </p>
                           {asset.unit.length > 56 && (
-                            <p className={`text-xs font-mono mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                            <p
+                              className={`text-xs font-mono mt-1 ${
+                                isDark ? "text-gray-400" : "text-gray-600"
+                              }`}
+                            >
                               Asset: {asset.unit.substring(56)}
                             </p>
                           )}
                         </div>
                         <div className="text-right ml-4">
-                          <p className={`font-bold text-lg ${isDark ? "text-white" : "text-gray-900"}`}>
+                          <p
+                            className={`font-bold text-lg ${
+                              isDark ? "text-white" : "text-gray-900"
+                            }`}
+                          >
                             {asset.quantity}
                           </p>
-                          <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                          <p
+                            className={`text-xs ${
+                              isDark ? "text-gray-400" : "text-gray-600"
+                            }`}
+                          >
                             Quantity
                           </p>
                         </div>
@@ -837,7 +1077,11 @@ export default function WalletManagementPage() {
             <div className="mt-6">
               <button
                 onClick={() => setShowAssetsModal(false)}
-                className={`w-full px-6 py-3 ${isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-300 text-gray-900 hover:bg-gray-400"} font-semibold rounded-lg transition-all`}
+                className={`w-full px-6 py-3 ${
+                  isDark
+                    ? "bg-gray-700 text-white hover:bg-gray-600"
+                    : "bg-gray-300 text-gray-900 hover:bg-gray-400"
+                } font-semibold rounded-lg transition-all`}
               >
                 Close
               </button>
@@ -849,15 +1093,33 @@ export default function WalletManagementPage() {
       {/* ✅ Multi-Asset Withdraw Modal */}
       {showWithdrawModal && withdrawWallet && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className={`rounded-2xl p-8 max-w-2xl w-full border ${isDark ? "border-white/10 bg-slate-900" : "border-gray-300 bg-white"} shadow-2xl max-h-[90vh] overflow-y-auto`}>
+          <div
+            className={`rounded-2xl p-8 max-w-2xl w-full border ${
+              isDark
+                ? "border-white/10 bg-slate-900"
+                : "border-gray-300 bg-white"
+            } shadow-2xl max-h-[90vh] overflow-y-auto`}
+          >
             <div className="text-center mb-6">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isDark ? "bg-orange-500/20" : "bg-orange-100"}`}>
+              <div
+                className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                  isDark ? "bg-orange-500/20" : "bg-orange-100"
+                }`}
+              >
                 <span className="text-4xl">💸</span>
               </div>
-              <h3 className={`text-2xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
+              <h3
+                className={`text-2xl font-bold mb-2 ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
                 Withdraw Assets
               </h3>
-              <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+              <p
+                className={`text-sm ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
                 From: {withdrawWallet.substring(0, 20)}...
               </p>
             </div>
@@ -865,7 +1127,11 @@ export default function WalletManagementPage() {
             <div className="space-y-4">
               {/* Recipient Address */}
               <div>
-                <label className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                <label
+                  className={`block text-sm font-semibold mb-2 ${
+                    isDark ? "text-gray-300" : "text-gray-700"
+                  }`}
+                >
                   Recipient Address *
                 </label>
                 <input
@@ -873,13 +1139,19 @@ export default function WalletManagementPage() {
                   value={withdrawAddress}
                   onChange={(e) => setWithdrawAddress(e.target.value)}
                   placeholder="addr1..."
-                  className={`w-full px-4 py-3 rounded-xl bg-gray-50 placeholder-gray-500 focus:border-orange-500 focus:outline-none border-white/10 text-gray-900 ${isDark && "bg-slate-800 border-2 border-gray-200 text-white"}`}
+                  className={`w-full px-4 py-3 rounded-xl bg-gray-50 placeholder-gray-500 focus:border-orange-500 focus:outline-none border-white/10 text-gray-900 ${
+                    isDark && "bg-slate-800 border-2 border-gray-200 text-white"
+                  }`}
                 />
               </div>
 
               {/* Asset Selection */}
               <div>
-                <label className={`block text-sm font-semibold mb-3 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                <label
+                  className={`block text-sm font-semibold mb-3 ${
+                    isDark ? "text-gray-300" : "text-gray-700"
+                  }`}
+                >
                   Select Assets to Withdraw
                 </label>
 
@@ -890,7 +1162,13 @@ export default function WalletManagementPage() {
                     const adaInfo = getAssetInfo("ADA");
 
                     return (
-                      <div className={`p-4 rounded-xl ${isDark ? "bg-blue-500/10 border-2 border-blue-500/30" : "bg-blue-50 border-2 border-blue-200"}`}>
+                      <div
+                        className={`p-4 rounded-xl ${
+                          isDark
+                            ? "bg-blue-500/10 border-2 border-blue-500/30"
+                            : "bg-blue-50 border-2 border-blue-200"
+                        }`}
+                      >
                         <div className="flex items-start gap-3">
                           <input
                             type="checkbox"
@@ -901,10 +1179,18 @@ export default function WalletManagementPage() {
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-2">
                               <div>
-                                <p className={`font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                                <p
+                                  className={`font-bold ${
+                                    isDark ? "text-white" : "text-gray-900"
+                                  }`}
+                                >
                                   💰 ADA (Cardano)
                                 </p>
-                                <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                                <p
+                                  className={`text-xs ${
+                                    isDark ? "text-gray-400" : "text-gray-600"
+                                  }`}
+                                >
                                   Available: ₳{adaInfo?.balance || "0"}
                                 </p>
                               </div>
@@ -920,7 +1206,11 @@ export default function WalletManagementPage() {
                                     updateAssetAmount("ADA", e.target.value)
                                   }
                                   placeholder="Amount"
-                                  className={`w-full px-3 py-2 rounded-lg ${isDark ? "bg-slate-800 border-blue-500/50 text-white" : "bg-white border-blue-300 text-gray-900"} border-2 focus:border-blue-500 focus:outline-none`}
+                                  className={`w-full px-3 py-2 rounded-lg ${
+                                    isDark
+                                      ? "bg-slate-800 border-blue-500/50 text-white"
+                                      : "bg-white border-blue-300 text-gray-900"
+                                  } border-2 focus:border-blue-500 focus:outline-none`}
                                 />
                                 <div className="flex gap-2 mt-2">
                                   <button
@@ -933,7 +1223,11 @@ export default function WalletManagementPage() {
                                         ).toFixed(6)
                                       )
                                     }
-                                    className={`flex-1 px-2 py-1 rounded text-xs hover:bg-blue-300 ${isDark ? "bg-blue-700 text-blue-200 hover:bg-blue-600" : "bg-blue-200 text-blue-900"}`}
+                                    className={`flex-1 px-2 py-1 rounded text-xs hover:bg-blue-300 ${
+                                      isDark
+                                        ? "bg-blue-700 text-blue-200 hover:bg-blue-600"
+                                        : "bg-blue-200 text-blue-900"
+                                    }`}
                                   >
                                     25%
                                   </button>
@@ -947,7 +1241,11 @@ export default function WalletManagementPage() {
                                         ).toFixed(6)
                                       )
                                     }
-                                    className={`flex-1 px-2 py-1 rounded text-xs hover:bg-blue-300 ${isDark ? "bg-blue-700 text-blue-200 hover:bg-blue-600" : "bg-blue-200 text-blue-900"}`}
+                                    className={`flex-1 px-2 py-1 rounded text-xs hover:bg-blue-300 ${
+                                      isDark
+                                        ? "bg-blue-700 text-blue-200 hover:bg-blue-600"
+                                        : "bg-blue-200 text-blue-900"
+                                    }`}
                                   >
                                     50%
                                   </button>
@@ -961,7 +1259,11 @@ export default function WalletManagementPage() {
                                         ).toFixed(6)
                                       )
                                     }
-                                    className={`flex-1 px-2 py-1 rounded text-xs hover:bg-blue-300 ${isDark ? "bg-blue-700 text-blue-200 hover:bg-blue-600" : "bg-blue-200 text-blue-900"}`}
+                                    className={`flex-1 px-2 py-1 rounded text-xs hover:bg-blue-300 ${
+                                      isDark
+                                        ? "bg-blue-700 text-blue-200 hover:bg-blue-600"
+                                        : "bg-blue-200 text-blue-900"
+                                    }`}
                                   >
                                     75%
                                   </button>
@@ -972,11 +1274,15 @@ export default function WalletManagementPage() {
                                         Math.max(
                                           0,
                                           parseFloat(adaInfo?.balance || "0") -
-                                          2
+                                            2
                                         ).toFixed(6)
                                       )
                                     }
-                                    className={`flex-1 px-2 py-1 rounded text-xs hover:bg-blue-300 ${isDark ? "bg-blue-700 text-blue-200 hover:bg-blue-600" : "bg-blue-200 text-blue-900"}`}
+                                    className={`flex-1 px-2 py-1 rounded text-xs hover:bg-blue-300 ${
+                                      isDark
+                                        ? "bg-blue-700 text-blue-200 hover:bg-blue-600"
+                                        : "bg-blue-200 text-blue-900"
+                                    }`}
                                   >
                                     Max
                                   </button>
@@ -1000,7 +1306,11 @@ export default function WalletManagementPage() {
                       return (
                         <div
                           key={asset.unit}
-                          className={`p-4 ${isDark ? "bg-slate-800 border-white/10" : "bg-gray-50 border-gray-200"} border-2 rounded-xl`}
+                          className={`p-4 ${
+                            isDark
+                              ? "bg-slate-800 border-white/10"
+                              : "bg-gray-50 border-gray-200"
+                          } border-2 rounded-xl`}
                         >
                           <div className="flex items-start gap-3">
                             <input
@@ -1012,13 +1322,25 @@ export default function WalletManagementPage() {
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-2">
                                 <div>
-                                  <p className={`font-bold ${isDark ? "text-white" : "text-gray-900"} text-sm`}>
+                                  <p
+                                    className={`font-bold ${
+                                      isDark ? "text-white" : "text-gray-900"
+                                    } text-sm`}
+                                  >
                                     📦 {asset.unit.substring(0, 20)}...
                                   </p>
-                                  <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"} font-mono`}>
+                                  <p
+                                    className={`text-xs ${
+                                      isDark ? "text-gray-400" : "text-gray-600"
+                                    } font-mono`}
+                                  >
                                     {asset.unit.substring(0, 56)}
                                   </p>
-                                  <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"} mt-1`}>
+                                  <p
+                                    className={`text-xs ${
+                                      isDark ? "text-gray-400" : "text-gray-500"
+                                    } mt-1`}
+                                  >
                                     Available: {asset.quantity}
                                   </p>
                                 </div>
@@ -1038,7 +1360,11 @@ export default function WalletManagementPage() {
                                     }
                                     placeholder="Amount"
                                     max={asset.quantity}
-                                    className={`w-full px-3 py-2 rounded-lg ${isDark ? "bg-slate-700 border-white/20 text-white" : "bg-white border-gray-300 text-gray-900"} focus:border-orange-500 focus:outline-none`}
+                                    className={`w-full px-3 py-2 rounded-lg ${
+                                      isDark
+                                        ? "bg-slate-700 border-white/20 text-white"
+                                        : "bg-white border-gray-300 text-gray-900"
+                                    } focus:border-orange-500 focus:outline-none`}
                                   />
                                   <button
                                     onClick={() =>
@@ -1047,7 +1373,11 @@ export default function WalletManagementPage() {
                                         asset.quantity
                                       )
                                     }
-                                    className={`mt-2 w-full px-3 py-1 rounded text-xs hover:bg-orange-300 ${isDark ? "bg-orange-700 text-orange-200 hover:bg-orange-600" : "bg-orange-200 text-orange-900"}`}
+                                    className={`mt-2 w-full px-3 py-1 rounded text-xs hover:bg-orange-300 ${
+                                      isDark
+                                        ? "bg-orange-700 text-orange-200 hover:bg-orange-600"
+                                        : "bg-orange-200 text-orange-900"
+                                    }`}
                                   >
                                     Send All ({asset.quantity})
                                   </button>
@@ -1062,17 +1392,27 @@ export default function WalletManagementPage() {
               </div>
 
               {/* Warning */}
-              <div className={`bg-yellow-50 ${isDark ? "bg-yellow-500/10 border-yellow-500/30" : "border-yellow-200"} border-2 rounded-xl p-3`}>
-                <p className={`text-xs ${isDark ? "text-yellow-400" : "text-yellow-700"}`}>
+              <div
+                className={`bg-yellow-50 ${
+                  isDark
+                    ? "bg-yellow-500/10 border-yellow-500/30"
+                    : "border-yellow-200"
+                } border-2 rounded-xl p-3`}
+              >
+                <p
+                  className={`text-xs ${
+                    isDark ? "text-yellow-400" : "text-yellow-700"
+                  }`}
+                >
                   ⚠️ Double-check the recipient address and amounts.
                   Transactions cannot be reversed!
                   {Array.from(selectedAssetsToWithdraw.values()).filter(
                     (a) => a.selected
                   ).length === 0 && (
-                      <strong className="block mt-1">
-                        Please select at least one asset to withdraw.
-                      </strong>
-                    )}
+                    <strong className="block mt-1">
+                      Please select at least one asset to withdraw.
+                    </strong>
+                  )}
                 </p>
               </div>
             </div>
@@ -1082,7 +1422,11 @@ export default function WalletManagementPage() {
               <button
                 onClick={closeWithdrawModal}
                 disabled={isWithdrawing}
-                className={`flex-1 px-6 py-3 ${isDark ? "bg-gray-700 hover:bg-gray-600 text-white" : "bg-gray-200 hover:bg-gray-300 text-gray-900"} font-semibold rounded-xl transition-all disabled:opacity-50`}
+                className={`flex-1 px-6 py-3 ${
+                  isDark
+                    ? "bg-gray-700 hover:bg-gray-600 text-white"
+                    : "bg-gray-200 hover:bg-gray-300 text-gray-900"
+                } font-semibold rounded-xl transition-all disabled:opacity-50`}
               >
                 Cancel
               </button>
@@ -1099,10 +1443,11 @@ export default function WalletManagementPage() {
               >
                 {isWithdrawing
                   ? "Withdrawing..."
-                  : `💸 Withdraw ${Array.from(selectedAssetsToWithdraw.values()).filter(
-                    (a) => a.selected
-                  ).length
-                  } Asset(s)`}
+                  : `💸 Withdraw ${
+                      Array.from(selectedAssetsToWithdraw.values()).filter(
+                        (a) => a.selected
+                      ).length
+                    } Asset(s)`}
               </button>
             </div>
           </div>

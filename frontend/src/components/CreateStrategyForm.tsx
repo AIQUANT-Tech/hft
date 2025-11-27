@@ -11,7 +11,7 @@ import { selectAuth } from "@/redux/authSlice";
 import type { Token } from "@/redux/tokensSlice";
 import { selectIsDark } from "@/redux/themeSlice";
 
-const API_URL = "http://localhost:8080";
+const API_URL = import.meta.env.VITE_SERVER_URL;
 
 type StrategyType = "PRICE_TARGET" | "ACA" | "GRID_TRADING";
 
@@ -84,14 +84,16 @@ export default function CreateStrategyForm() {
 
   return (
     <div
-      className={`rounded-2xl p-6 shadow-lg border ${isDark
-        ? "bg-linear-to-br from-slate-900 to-slate-800 border-white/10 shadow-slate-900/50"
-        : "bg-linear-to-br from-white to-gray-50 border-gray-300"
-        }`}
+      className={`rounded-2xl p-6 shadow-lg border ${
+        isDark
+          ? "bg-linear-to-br from-slate-900 to-slate-800 border-white/10 shadow-slate-900/50"
+          : "bg-linear-to-br from-white to-gray-50 border-gray-300"
+      }`}
     >
       <h3
-        className={`text-2xl font-bold mb-6 ${isDark ? "text-white" : "text-gray-900"
-          }`}
+        className={`text-2xl font-bold mb-6 ${
+          isDark ? "text-white" : "text-gray-900"
+        }`}
       >
         📝 Create New Strategy
       </h3>
@@ -102,23 +104,25 @@ export default function CreateStrategyForm() {
           <button
             key={strategy.type}
             onClick={() => setSelectedStrategy(strategy.type)}
-            className={`relative p-6 rounded-2xl border-2 transition-all hover:scale-105 ${selectedStrategy === strategy.type
-              ? `bg-linear-to-br ${strategy.color} border-transparent text-white shadow-xl`
-              : isDark
+            className={`relative p-6 rounded-2xl border-2 transition-all hover:scale-105 ${
+              selectedStrategy === strategy.type
+                ? `bg-linear-to-br ${strategy.color} border-transparent text-white shadow-xl`
+                : isDark
                 ? "bg-slate-800 border-white/10 text-white hover:border-white/20"
                 : "bg-white border-gray-200 text-gray-900 hover:border-gray-300"
-              }`}
+            }`}
           >
             <div className="text-center">
               <div className="text-5xl mb-3">{strategy.icon}</div>
               <h4 className="font-bold text-lg mb-2">{strategy.name}</h4>
               <p
-                className={`text-sm ${selectedStrategy === strategy.type
-                  ? "text-white/90"
-                  : isDark
+                className={`text-sm ${
+                  selectedStrategy === strategy.type
+                    ? "text-white/90"
+                    : isDark
                     ? "text-gray-400"
                     : "text-gray-600"
-                  }`}
+                }`}
               >
                 {strategy.description}
               </p>

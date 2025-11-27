@@ -4,7 +4,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import type { RootState } from "./store";
 
-const API_URL = "http://localhost:8080/api";
+const API_URL = import.meta.env.VITE_SERVER_URL;
 
 interface User {
   id: number;
@@ -39,7 +39,7 @@ export const authConnect = createAsyncThunk(
   async (walletAddress: string, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${API_URL}/auth/connect`,
+        `${API_URL}/api/auth/connect`,
         { walletAddress },
         { withCredentials: true }
       );
@@ -57,7 +57,7 @@ export const fetchCurrentUser = createAsyncThunk(
   "auth/me",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/auth/me`, {
+      const response = await axios.get(`${API_URL}/api/auth/me`, {
         withCredentials: true,
       });
       return response.data;
@@ -77,9 +77,13 @@ export const updateProfile = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await axios.put(`${API_URL}/auth/profile`, profileData, {
-        withCredentials: true,
-      });
+      const response = await axios.put(
+        `${API_URL}/api/auth/profile`,
+        profileData,
+        {
+          withCredentials: true,
+        }
+      );
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
@@ -95,7 +99,7 @@ export const logoutUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${API_URL}/auth/logout`,
+        `${API_URL}/api/auth/logout`,
         {},
         { withCredentials: true }
       );

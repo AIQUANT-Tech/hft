@@ -7,7 +7,7 @@ import { useSelector } from "react-redux";
 import { io, Socket } from "socket.io-client";
 import { selectIsDark } from "@/redux/themeSlice";
 
-export const API_URL = "http://localhost:8080";
+export const API_URL = import.meta.env.VITE_SERVER_URL;
 
 // ✅ Updated to support all strategy types
 interface BaseStrategy {

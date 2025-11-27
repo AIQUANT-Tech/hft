@@ -2,7 +2,6 @@
 
 import express, { Application } from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import tokensRouter from "./routes/tokens.routes.js";
@@ -32,7 +31,7 @@ import { Portfolio } from "./models/portfolio.model.js";
 import { Strategy } from "./models/strategy.model.js";
 import { ActivityLog } from "./models/activityLog.model.js";
 import { PortfolioHistory } from "./models/portfolioHistory.model.js";
-
+import dotenv from "dotenv";
 dotenv.config();
 
 (async () => {
@@ -85,6 +84,12 @@ dotenv.config();
   app.use(express.json());
 
   // Routes
+  app.get("/api", (req, res) => {
+    res.json({
+      success: true,
+      message: "API is running for ADA Velocity 🚀",
+    });
+  });
   app.use("/api/tokens", tokensRouter);
   app.use("/api/aggregator", aggregatorRoutes);
   app.use("/api/price-history", priceHistoryRoutes);

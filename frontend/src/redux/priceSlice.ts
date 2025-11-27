@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import type { RootState } from "./store"; // ✅ Add this for selectors
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const API_URL = import.meta.env.VITE_SERVER_URL;
 
 export interface PricePoint {
   timestamp: number;
@@ -46,7 +46,7 @@ export const fetchTokenPriceHistory = createAsyncThunk(
     try {
       const { tokenId, days = 30 } = params;
       const response = await axios.get(
-        `${API_BASE_URL}/api/price-history/${tokenId}?days=${days}`
+        `${API_URL}/api/price-history/${tokenId}?days=${days}`
       );
       return response.data.data;
     } catch (error: any) {

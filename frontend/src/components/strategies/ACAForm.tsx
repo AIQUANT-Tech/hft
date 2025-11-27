@@ -7,7 +7,7 @@ import { useSelector } from "react-redux";
 import type { Token } from "@/redux/tokensSlice";
 import { selectIsDark } from "@/redux/themeSlice";
 
-const API_URL = "http://localhost:8080";
+const API_URL = import.meta.env.VITE_SERVER_URL;
 
 interface Props {
   tokens: Token[];
@@ -131,8 +131,9 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
         {/* Strategy Name */}
         <div>
           <label
-            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-              }`}
+            className={`block text-sm font-semibold mb-2 ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
           >
             Strategy Name *
           </label>
@@ -142,18 +143,20 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., Daily MIN ACA"
             required
-            className={`w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none transition-colors ${isDark
-              ? "bg-slate-800 border-white/10 text-white focus:border-green-500"
-              : "bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500"
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none transition-colors ${
+              isDark
+                ? "bg-slate-800 border-white/10 text-white focus:border-green-500"
+                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500"
+            }`}
           />
         </div>
 
         {/* Wallet Selection */}
         <div>
           <label
-            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-              }`}
+            className={`block text-sm font-semibold mb-2 ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
           >
             Select Wallet *
           </label>
@@ -164,17 +167,18 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
             }
             required
             disabled={loading || wallets.length === 0}
-            className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none transition-colors disabled:opacity-50 ${isDark
-              ? "bg-slate-800 border-white/10 text-white focus:border-green-500"
-              : "bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500"
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none transition-colors disabled:opacity-50 ${
+              isDark
+                ? "bg-slate-800 border-white/10 text-white focus:border-green-500"
+                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500"
+            }`}
           >
             <option value="">
               {loading
                 ? "Loading..."
                 : wallets.length === 0
-                  ? "No wallets"
-                  : "Choose wallet..."}
+                ? "No wallets"
+                : "Choose wallet..."}
             </option>
             {wallets.map((address) => (
               <option key={address} value={address}>
@@ -188,18 +192,20 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
         {/* Token Selection */}
         <div>
           <label
-            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-              }`}
+            className={`block text-sm font-semibold mb-2 ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
           >
             Select Token *
           </label>
           <select
             onChange={(e) => handleTokenSelect(e.target.value)}
             required
-            className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none transition-colors ${isDark
-              ? "bg-slate-800 border-white/10 text-white focus:border-green-500"
-              : "bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500"
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none transition-colors ${
+              isDark
+                ? "bg-slate-800 border-white/10 text-white focus:border-green-500"
+                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500"
+            }`}
           >
             <option value="">Choose a token...</option>
             {tokens.map((token) => (
@@ -213,8 +219,9 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
         {/* Trading Pair */}
         <div>
           <label
-            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-              }`}
+            className={`block text-sm font-semibold mb-2 ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
           >
             Trading Pair
           </label>
@@ -222,18 +229,20 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
             type="text"
             value={formData.tradingPair}
             readOnly
-            className={`w-full px-4 py-3 rounded-xl border-2 cursor-not-allowed ${isDark
-              ? "bg-slate-700 border-white/10 text-gray-400"
-              : "bg-gray-200 border-gray-300 text-gray-600"
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 cursor-not-allowed ${
+              isDark
+                ? "bg-slate-700 border-white/10 text-gray-400"
+                : "bg-gray-200 border-gray-300 text-gray-600"
+            }`}
           />
         </div>
 
         {/* Pool Id */}
         <div>
           <label
-            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-              }`}
+            className={`block text-sm font-semibold mb-2 ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
           >
             Pool ID
           </label>
@@ -241,18 +250,20 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
             type="text"
             value={formData.poolId}
             readOnly
-            className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none transition-colors ${isDark
-              ? "bg-slate-800 border-white/10 text-white focus:border-blue-500"
-              : "bg-gray-50 border-gray-200 text-gray-900 focus:border-blue-500"
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none transition-colors ${
+              isDark
+                ? "bg-slate-800 border-white/10 text-white focus:border-blue-500"
+                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-blue-500"
+            }`}
           />
         </div>
 
         {/* Investment Amount per Interval */}
         <div>
           <label
-            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-              }`}
+            className={`block text-sm font-semibold mb-2 ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
           >
             Investment Amount (ADA) *
           </label>
@@ -266,14 +277,16 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
             }
             placeholder="10"
             required
-            className={`w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none transition-colors ${isDark
-              ? "bg-slate-800 border-white/10 text-white focus:border-green-500"
-              : "bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500"
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none transition-colors ${
+              isDark
+                ? "bg-slate-800 border-white/10 text-white focus:border-green-500"
+                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500"
+            }`}
           />
           <p
-            className={`text-xs mt-1 ${isDark ? "text-gray-400" : "text-gray-500"
-              }`}
+            className={`text-xs mt-1 ${
+              isDark ? "text-gray-400" : "text-gray-500"
+            }`}
           >
             ADA to spend per buy interval
           </p>
@@ -282,8 +295,9 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
         {/* Interval */}
         <div>
           <label
-            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-              }`}
+            className={`block text-sm font-semibold mb-2 ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
           >
             Buy Interval *
           </label>
@@ -292,10 +306,11 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
             onChange={(e) =>
               setFormData({ ...formData, intervalMinutes: e.target.value })
             }
-            className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none transition-colors ${isDark
-              ? "bg-slate-800 border-white/10 text-white focus:border-green-500"
-              : "bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500"
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none transition-colors ${
+              isDark
+                ? "bg-slate-800 border-white/10 text-white focus:border-green-500"
+                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500"
+            }`}
           >
             {intervalOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -308,8 +323,9 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
         {/* Total Runs (Optional) */}
         <div className="md:col-span-2">
           <label
-            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-              }`}
+            className={`block text-sm font-semibold mb-2 ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
           >
             Total Executions (Optional)
           </label>
@@ -321,14 +337,16 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
               setFormData({ ...formData, totalRuns: e.target.value })
             }
             placeholder="Leave empty for unlimited"
-            className={`w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none transition-colors ${isDark
-              ? "bg-slate-800 border-white/10 text-white focus:border-green-500"
-              : "bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500"
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none transition-colors ${
+              isDark
+                ? "bg-slate-800 border-white/10 text-white focus:border-green-500"
+                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500"
+            }`}
           />
           <p
-            className={`text-xs mt-1 ${isDark ? "text-gray-400" : "text-gray-500"
-              }`}
+            className={`text-xs mt-1 ${
+              isDark ? "text-gray-400" : "text-gray-500"
+            }`}
           >
             Limit the number of buy executions (leave empty for continuous)
           </p>
@@ -337,10 +355,11 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
 
       {/* Execute Once Toggle */}
       <div
-        className={`rounded-xl p-4 border-2 ${isDark
-          ? "bg-linear-to-r from-green-500/10 to-emerald-500/10 border-green-500/30"
-          : "bg-linear-to-r from-green-50 to-emerald-50 border-green-200"
-          }`}
+        className={`rounded-xl p-4 border-2 ${
+          isDark
+            ? "bg-linear-to-r from-green-500/10 to-emerald-500/10 border-green-500/30"
+            : "bg-linear-to-r from-green-50 to-emerald-50 border-green-200"
+        }`}
       >
         <div className="flex items-start gap-4">
           <input
@@ -350,21 +369,24 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
             onChange={(e) =>
               setFormData({ ...formData, executeOnce: e.target.checked })
             }
-            className={`w-6 h-6 mt-0.5 rounded-lg border-2 text-green-500 focus:ring-2 focus:ring-green-500 cursor-pointer ${isDark
-              ? "bg-slate-800 border-white/20"
-              : "bg-white border-gray-300"
-              }`}
+            className={`w-6 h-6 mt-0.5 rounded-lg border-2 text-green-500 focus:ring-2 focus:ring-green-500 cursor-pointer ${
+              isDark
+                ? "bg-slate-800 border-white/20"
+                : "bg-white border-gray-300"
+            }`}
           />
           <label htmlFor="executeOnceACA" className="flex-1 cursor-pointer">
             <div
-              className={`font-semibold mb-1 ${isDark ? "text-white" : "text-gray-900"
-                }`}
+              className={`font-semibold mb-1 ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
             >
               Single Buy Mode
             </div>
             <div
-              className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"
-                }`}
+              className={`text-sm ${
+                isDark ? "text-gray-400" : "text-gray-600"
+              }`}
             >
               {formData.executeOnce
                 ? "✅ Will execute only one buy then stop"
@@ -377,59 +399,67 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
       {/* Estimated Metrics */}
       {metrics && formData.baseToken && (
         <div
-          className={`rounded-xl p-5 border-2 ${isDark
-            ? "bg-linear-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/30"
-            : "bg-linear-to-r from-blue-50 to-cyan-50 border-blue-200"
-            }`}
+          className={`rounded-xl p-5 border-2 ${
+            isDark
+              ? "bg-linear-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/30"
+              : "bg-linear-to-r from-blue-50 to-cyan-50 border-blue-200"
+          }`}
         >
           <div className="flex items-start gap-3 mb-4">
             <div className="text-3xl">📊</div>
             <div className="flex-1">
               <p
-                className={`font-semibold mb-2 ${isDark ? "text-white" : "text-gray-900"
-                  }`}
+                className={`font-semibold mb-2 ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
               >
                 ACA Strategy Projections
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                 <div>
                   <p
-                    className={`text-xs mb-1 ${isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
+                    className={`text-xs mb-1 ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
                   >
                     Buys per day
                   </p>
                   <p
-                    className={`font-bold ${isDark ? "text-blue-400" : "text-blue-600"
-                      }`}
+                    className={`font-bold ${
+                      isDark ? "text-blue-400" : "text-blue-600"
+                    }`}
                   >
                     {metrics.dailyBuys}x
                   </p>
                 </div>
                 <div>
                   <p
-                    className={`text-xs mb-1 ${isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
+                    className={`text-xs mb-1 ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
                   >
                     Daily investment
                   </p>
                   <p
-                    className={`font-bold ${isDark ? "text-green-400" : "text-green-600"
-                      }`}
+                    className={`font-bold ${
+                      isDark ? "text-green-400" : "text-green-600"
+                    }`}
                   >
                     ₳{metrics.dailyInvestment.toFixed(2)}
                   </p>
                 </div>
                 <div>
                   <p
-                    className={`text-xs mb-1 ${isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
+                    className={`text-xs mb-1 ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
                   >
                     Weekly investment
                   </p>
                   <p
-                    className={`font-bold ${isDark ? "text-purple-400" : "text-purple-600"
-                      }`}
+                    className={`font-bold ${
+                      isDark ? "text-purple-400" : "text-purple-600"
+                    }`}
                   >
                     ₳{metrics.weeklyInvestment.toFixed(2)}
                   </p>
@@ -437,14 +467,16 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
                 {metrics.totalInvestment && (
                   <div>
                     <p
-                      className={`text-xs mb-1 ${isDark ? "text-gray-400" : "text-gray-600"
-                        }`}
+                      className={`text-xs mb-1 ${
+                        isDark ? "text-gray-400" : "text-gray-600"
+                      }`}
                     >
                       Total investment
                     </p>
                     <p
-                      className={`font-bold ${isDark ? "text-orange-400" : "text-orange-600"
-                        }`}
+                      className={`font-bold ${
+                        isDark ? "text-orange-400" : "text-orange-600"
+                      }`}
                     >
                       ₳{metrics.totalInvestment.toFixed(2)}
                     </p>
@@ -454,8 +486,9 @@ export default function ACAForm({ tokens, wallets, loading }: Props) {
             </div>
           </div>
           <p
-            className={`text-xs leading-relaxed ${isDark ? "text-gray-400" : "text-gray-600"
-              }`}
+            className={`text-xs leading-relaxed ${
+              isDark ? "text-gray-400" : "text-gray-600"
+            }`}
           >
             💡 <strong>ACA Strategy:</strong> Automatically buys{" "}
             {formData.tradingPair.split("-")[0]} with{" "}

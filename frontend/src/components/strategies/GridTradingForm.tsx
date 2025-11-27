@@ -7,7 +7,7 @@ import { useSelector } from "react-redux";
 import type { Token } from "@/redux/tokensSlice";
 import { selectIsDark } from "@/redux/themeSlice";
 
-const API_URL = "http://localhost:8080";
+const API_URL = import.meta.env.VITE_SERVER_URL;
 
 interface Props {
   tokens: Token[];
@@ -145,8 +145,9 @@ export default function GridForm({ tokens, wallets, loading }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label
-            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-              }`}
+            className={`block text-sm font-semibold mb-2 ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
           >
             Strategy Name *
           </label>
@@ -156,17 +157,19 @@ export default function GridForm({ tokens, wallets, loading }: Props) {
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., MIN Grid 10%"
             required
-            className={`w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none ${isDark
-              ? "bg-slate-800 border-white/10 text-white focus:border-purple-500"
-              : "bg-gray-50 border-gray-200 text-gray-900 focus:border-purple-500"
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none ${
+              isDark
+                ? "bg-slate-800 border-white/10 text-white focus:border-purple-500"
+                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-purple-500"
+            }`}
           />
         </div>
 
         <div>
           <label
-            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-              }`}
+            className={`block text-sm font-semibold mb-2 ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
           >
             Select Wallet *
           </label>
@@ -177,17 +180,18 @@ export default function GridForm({ tokens, wallets, loading }: Props) {
             }
             required
             disabled={loading || wallets.length === 0}
-            className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none disabled:opacity-50 ${isDark
-              ? "bg-slate-800 border-white/10 text-white focus:border-purple-500"
-              : "bg-gray-50 border-gray-200 text-gray-900 focus:border-purple-500"
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none disabled:opacity-50 ${
+              isDark
+                ? "bg-slate-800 border-white/10 text-white focus:border-purple-500"
+                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-purple-500"
+            }`}
           >
             <option value="">
               {loading
                 ? "Loading..."
                 : wallets.length === 0
-                  ? "No wallets"
-                  : "Choose wallet..."}
+                ? "No wallets"
+                : "Choose wallet..."}
             </option>
             {wallets.map((address) => (
               <option key={address} value={address}>
@@ -202,23 +206,26 @@ export default function GridForm({ tokens, wallets, loading }: Props) {
       {/* Token Selection */}
       <div>
         <label
-          className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-            }`}
+          className={`block text-sm font-semibold mb-2 ${
+            isDark ? "text-gray-300" : "text-gray-700"
+          }`}
         >
           Select Token *
         </label>
         <select
           onChange={(e) => handleTokenSelect(e.target.value)}
           required
-          className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none ${isDark
-            ? "bg-slate-800 border-white/10 text-white focus:border-purple-500"
-            : "bg-gray-50 border-gray-200 text-gray-900 focus:border-purple-500"
-            }`}
+          className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none ${
+            isDark
+              ? "bg-slate-800 border-white/10 text-white focus:border-purple-500"
+              : "bg-gray-50 border-gray-200 text-gray-900 focus:border-purple-500"
+          }`}
         >
           <option value="">Choose a token...</option>
           {tokens.map((token) => (
             <option key={token.id} value={token.id}>
-              {token.symbol} - Current: ₳{formatPriceWithDecimals(token.priceAda)}
+              {token.symbol} - Current: ₳
+              {formatPriceWithDecimals(token.priceAda)}
             </option>
           ))}
         </select>
@@ -228,8 +235,9 @@ export default function GridForm({ tokens, wallets, loading }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label
-            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-              }`}
+            className={`block text-sm font-semibold mb-2 ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
           >
             Lower Price (ADA) *
           </label>
@@ -241,17 +249,19 @@ export default function GridForm({ tokens, wallets, loading }: Props) {
             }
             placeholder="0.000000009"
             required
-            className={`w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none ${isDark
-              ? "bg-slate-800 border-white/10 text-white focus:border-purple-500"
-              : "bg-gray-50 border-gray-200 text-gray-900 focus:border-purple-500"
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none ${
+              isDark
+                ? "bg-slate-800 border-white/10 text-white focus:border-purple-500"
+                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-purple-500"
+            }`}
           />
         </div>
 
         <div>
           <label
-            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-              }`}
+            className={`block text-sm font-semibold mb-2 ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
           >
             Upper Price (ADA) *
           </label>
@@ -263,10 +273,11 @@ export default function GridForm({ tokens, wallets, loading }: Props) {
             }
             placeholder="0.000000011"
             required
-            className={`w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none ${isDark
-              ? "bg-slate-800 border-white/10 text-white focus:border-purple-500"
-              : "bg-gray-50 border-gray-200 text-gray-900 focus:border-purple-500"
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none ${
+              isDark
+                ? "bg-slate-800 border-white/10 text-white focus:border-purple-500"
+                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-purple-500"
+            }`}
           />
         </div>
       </div>
@@ -275,8 +286,9 @@ export default function GridForm({ tokens, wallets, loading }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label
-            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-              }`}
+            className={`block text-sm font-semibold mb-2 ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
           >
             Grid Levels *
           </label>
@@ -289,14 +301,16 @@ export default function GridForm({ tokens, wallets, loading }: Props) {
               setFormData({ ...formData, gridLevels: e.target.value })
             }
             required
-            className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none ${isDark
-              ? "bg-slate-800 border-white/10 text-white focus:border-purple-500"
-              : "bg-gray-50 border-gray-200 text-gray-900 focus:border-purple-500"
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none ${
+              isDark
+                ? "bg-slate-800 border-white/10 text-white focus:border-purple-500"
+                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-purple-500"
+            }`}
           />
           <p
-            className={`text-xs mt-1 ${isDark ? "text-gray-400" : "text-gray-500"
-              }`}
+            className={`text-xs mt-1 ${
+              isDark ? "text-gray-400" : "text-gray-500"
+            }`}
           >
             Number of buy/sell levels (2-50)
           </p>
@@ -304,8 +318,9 @@ export default function GridForm({ tokens, wallets, loading }: Props) {
 
         <div>
           <label
-            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-              }`}
+            className={`block text-sm font-semibold mb-2 ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
           >
             Investment per Grid (ADA) *
           </label>
@@ -319,20 +334,22 @@ export default function GridForm({ tokens, wallets, loading }: Props) {
             }
             placeholder="10"
             required
-            className={`w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none ${isDark
-              ? "bg-slate-800 border-white/10 text-white focus:border-purple-500"
-              : "bg-gray-50 border-gray-200 text-gray-900 focus:border-purple-500"
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none ${
+              isDark
+                ? "bg-slate-800 border-white/10 text-white focus:border-purple-500"
+                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-purple-500"
+            }`}
           />
         </div>
       </div>
 
       {/* Execute Once Toggle */}
       <div
-        className={`rounded-xl p-4 border-2 ${isDark
-          ? "bg-linear-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30"
-          : "bg-linear-to-r from-purple-50 to-pink-50 border-purple-200"
-          }`}
+        className={`rounded-xl p-4 border-2 ${
+          isDark
+            ? "bg-linear-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30"
+            : "bg-linear-to-r from-purple-50 to-pink-50 border-purple-200"
+        }`}
       >
         <div className="flex items-start gap-4">
           <input
@@ -342,21 +359,24 @@ export default function GridForm({ tokens, wallets, loading }: Props) {
             onChange={(e) =>
               setFormData({ ...formData, executeOnce: e.target.checked })
             }
-            className={`w-6 h-6 mt-0.5 rounded-lg border-2 text-purple-500 focus:ring-2 focus:ring-purple-500 cursor-pointer ${isDark
-              ? "bg-slate-800 border-white/20"
-              : "bg-white border-gray-300"
-              }`}
+            className={`w-6 h-6 mt-0.5 rounded-lg border-2 text-purple-500 focus:ring-2 focus:ring-purple-500 cursor-pointer ${
+              isDark
+                ? "bg-slate-800 border-white/20"
+                : "bg-white border-gray-300"
+            }`}
           />
           <label htmlFor="executeOnceGrid" className="flex-1 cursor-pointer">
             <div
-              className={`font-semibold mb-1 ${isDark ? "text-white" : "text-gray-900"
-                }`}
+              className={`font-semibold mb-1 ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
             >
               Single Cycle Mode
             </div>
             <div
-              className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"
-                }`}
+              className={`text-sm ${
+                isDark ? "text-gray-400" : "text-gray-600"
+              }`}
             >
               {formData.executeOnce
                 ? "✅ Will stop after completing one buy-sell cycle"
@@ -369,73 +389,83 @@ export default function GridForm({ tokens, wallets, loading }: Props) {
       {/* Metrics */}
       {metrics && formData.baseToken && (
         <div
-          className={`rounded-xl p-5 border-2 ${isDark
-            ? "bg-linear-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/30"
-            : "bg-linear-to-r from-blue-50 to-cyan-50 border-blue-200"
-            }`}
+          className={`rounded-xl p-5 border-2 ${
+            isDark
+              ? "bg-linear-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/30"
+              : "bg-linear-to-r from-blue-50 to-cyan-50 border-blue-200"
+          }`}
         >
           <div className="flex items-start gap-3 mb-4">
             <div className="text-3xl">📊</div>
             <div className="flex-1">
               <p
-                className={`font-semibold mb-2 ${isDark ? "text-white" : "text-gray-900"
-                  }`}
+                className={`font-semibold mb-2 ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
               >
                 Grid Strategy Metrics
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                 <div>
                   <p
-                    className={`text-xs mb-1 ${isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
+                    className={`text-xs mb-1 ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
                   >
                     Grid Spacing
                   </p>
                   <p
-                    className={`font-bold ${isDark ? "text-purple-400" : "text-purple-600"
-                      }`}
+                    className={`font-bold ${
+                      isDark ? "text-purple-400" : "text-purple-600"
+                    }`}
                   >
                     ₳{metrics.gridSpacing}
                   </p>
                 </div>
                 <div>
                   <p
-                    className={`text-xs mb-1 ${isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
+                    className={`text-xs mb-1 ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
                   >
                     Total Investment
                   </p>
                   <p
-                    className={`font-bold ${isDark ? "text-green-400" : "text-green-600"
-                      }`}
+                    className={`font-bold ${
+                      isDark ? "text-green-400" : "text-green-600"
+                    }`}
                   >
                     ₳{metrics.totalInvestment}
                   </p>
                 </div>
                 <div>
                   <p
-                    className={`text-xs mb-1 ${isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
+                    className={`text-xs mb-1 ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
                   >
                     Profit/Cycle
                   </p>
                   <p
-                    className={`font-bold ${isDark ? "text-blue-400" : "text-blue-600"
-                      }`}
+                    className={`font-bold ${
+                      isDark ? "text-blue-400" : "text-blue-600"
+                    }`}
                   >
                     ₳{metrics.profitPerCycle}
                   </p>
                 </div>
                 <div>
                   <p
-                    className={`text-xs mb-1 ${isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
+                    className={`text-xs mb-1 ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
                   >
                     Price Range
                   </p>
                   <p
-                    className={`font-bold ${isDark ? "text-orange-400" : "text-orange-600"
-                      }`}
+                    className={`font-bold ${
+                      isDark ? "text-orange-400" : "text-orange-600"
+                    }`}
                   >
                     {metrics.priceRange}
                   </p>
@@ -444,8 +474,9 @@ export default function GridForm({ tokens, wallets, loading }: Props) {
             </div>
           </div>
           <p
-            className={`text-xs leading-relaxed ${isDark ? "text-gray-400" : "text-gray-600"
-              }`}
+            className={`text-xs leading-relaxed ${
+              isDark ? "text-gray-400" : "text-gray-600"
+            }`}
           >
             💡 <strong>Grid Trading:</strong> Places {formData.gridLevels}{" "}
             buy/sell orders between ₳{formData.lowerPrice} and ₳
