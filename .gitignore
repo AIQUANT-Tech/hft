@@ -26,3 +26,4 @@
 # Ignore .vscode file
 /.vscode/
 .env
+deployment.conf

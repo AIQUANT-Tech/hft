@@ -44,7 +44,7 @@ dotenv.config();
   // FIX: Proper Socket.IO CORS configuration
   const io = new SocketIOServer(httpServer, {
     cors: {
-      origin: ["http://localhost:3000", "http://localhost:5173"],
+      origin: [process.env.FRONTEND_URL!, process.env.FRONTEND_URL_2!],
       methods: ["GET", "POST"],
       credentials: true,
     },
@@ -75,7 +75,7 @@ dotenv.config();
 
   app.use(
     cors({
-      origin: ["http://localhost:3000", "http://localhost:5173"],
+      origin: [process.env.FRONTEND_URL!, process.env.FRONTEND_URL_2!],
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],
