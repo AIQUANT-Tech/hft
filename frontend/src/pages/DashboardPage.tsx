@@ -1,51 +1,31 @@
-// src/pages/DashboardPage.tsx
-
-import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import type { RootState } from "@/redux/store";
+import { useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import PortfolioStats from "@/components/dashboard/PortfolioStats.tsx";
 import PortfolioChart from "@/components/dashboard/PortfolioChart.tsx";
 import StrategyBreakdown from "@/components/dashboard/StrategyBreakdown.tsx";
 import HoldingsTable from "@/components/dashboard/HoldingsTable.tsx";
 import RecentActivity from "@/components/dashboard/RecentActivity.tsx";
-import ActiveStrategies from "@/components/dashboard/ActiveStrategies.tsx";
-import axios from "axios";
 import { toast } from "sonner";
-import { selectAuth } from "@/redux/authSlice";
-
-const API_URL = "http://localhost:8080";
+import {
+  fetchDashboardData,
+  selectDashboardData,
+  selectDashboardLoading,
+  selectDashboardError,
+} from "@/redux/dashboardSlice";
+import type { AppDispatch } from "@/redux/store";
+import StrategyMonitor from "@/components/StrategyMonitor";
 
 export default function DashboardPage() {
-  // const { walletId } = useSelector((state: RootState) => state.wallet);
-  const [portfolioData, setPortfolioData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const { isAuthenticated } = useSelector(selectAuth);
+  const dispatch = useDispatch<AppDispatch>();
+  const portfolioData = useSelector(selectDashboardData);
+  const loading = useSelector(selectDashboardLoading);
+  const error = useSelector(selectDashboardError);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchDashboardData();
+    if (error) {
+      toast.error(error);
     }
-  }, [isAuthenticated]);
-
-  const fetchDashboardData = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/api/dashboard`, {
-        withCredentials: true,
-      });
-      console.log("Dashboard data:", response.data);
-
-      if (response.data.success) {
-        setPortfolioData(response.data.data);
-      } else {
-        toast.error("Failed to load dashboard data");
-      }
-    } catch (error: any) {
-      console.error("Failed to fetch dashboard data:", error);
-      toast.error(error.response?.data?.error || "Failed to load dashboard");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [error]);
 
   if (loading) {
     return (
@@ -68,7 +48,7 @@ export default function DashboardPage() {
             No dashboard data available
           </p>
           <button
-            onClick={fetchDashboardData}
+            onClick={() => dispatch(fetchDashboardData())}
             className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
             Retry
@@ -95,12 +75,12 @@ export default function DashboardPage() {
           {/* Right Section - 40% */}
           <div className="space-y-6">
             <StrategyBreakdown data={portfolioData.strategies} />
-            <RecentActivity data={portfolioData.activities} />
+            <RecentActivity />
           </div>
         </div>
 
         {/* Active Strategies - Full Width */}
-        <ActiveStrategies data={portfolioData.strategies} />
+        <StrategyMonitor showLogs={false} />
       </div>
     </div>
   );

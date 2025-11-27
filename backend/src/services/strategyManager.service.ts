@@ -1,11 +1,10 @@
 // src/services/strategyManager.service.ts
-
 import { BaseStrategy } from "../strategies/BaseStrategy.js";
 import {
   PriceTargetStrategy,
   PriceTargetConfig,
 } from "../strategies/PriceTargetStrategy.js";
-import { ACAStrategy, ACAConfig } from "../strategies/ACAStrategy.js"; // ✅ Import
+import { ACAStrategy, ACAConfig } from "../strategies/ACAStrategy.js";
 import { logger } from "./logger.service.js";
 import { GridConfig, GridStrategy } from "../strategies/GridStrategy.js";
 
@@ -53,11 +52,14 @@ export class StrategyManagerService {
 
     for (const [id, strategy] of this.strategies) {
       try {
-        await strategy.execute();
+        // Only execute if strategy is active
+        if (strategy.config?.isActive) {
+          await strategy.execute();
+        }
       } catch (error) {
         logger.error(
           `Error executing strategy ${id}: ${(error as Error).message}`,
-          strategy.config.name,
+          strategy.config?.name,
           "strategy"
         );
       }
@@ -120,7 +122,7 @@ export class StrategyManagerService {
     const removed = this.strategies.delete(id);
 
     if (removed) {
-      logger.warning(`Strategy removed`, strategy?.config.name, "strategy");
+      logger.warning(`Strategy removed`, strategy?.config?.name, "strategy");
     } else {
       logger.error(`Failed to remove strategy: ${id}`, undefined, "strategy");
     }
@@ -177,6 +179,31 @@ export class StrategyManagerService {
       checkInterval: this.checkInterval,
       activeStrategies: this.strategies.size,
     };
+  }
+
+  /**
+   * NEW: Return active strategies.
+   * If walletAddress is passed, filter active strategies by owner/wallet keys commonly used in configs.
+   * Returns array of objects: { id, config, status }
+   */
+  getAllActiveStrategies(walletAddress: string) {
+    const active = Array.from(this.strategies.values()).filter(
+      (s) => s.config?.isActive
+    );
+
+    if (!walletAddress) {
+      return active.map((s) => ({
+        id: s.config?.id,
+        config: s.config,
+        status: s.getStatus(),
+      }));
+    }
+
+    return active.map((s) => ({
+      id: s.config?.id,
+      config: s.config,
+      status: s.getStatus(),
+    }));
   }
 }
 

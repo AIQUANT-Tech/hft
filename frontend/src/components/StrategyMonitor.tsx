@@ -7,7 +7,7 @@ import { useSelector } from "react-redux";
 import { io, Socket } from "socket.io-client";
 import { selectIsDark } from "@/redux/themeSlice";
 
-const API_URL = "http://localhost:8080";
+export const API_URL = "http://localhost:8080";
 
 // ✅ Updated to support all strategy types
 interface BaseStrategy {
@@ -61,7 +61,7 @@ interface GridStrategy extends BaseStrategy {
 
 type Strategy = PriceTargetStrategy | ACAStrategy | GridStrategy;
 
-interface LogMessage {
+export interface LogMessage {
   id: string;
   timestamp: Date;
   type: "info" | "success" | "warning" | "error";
@@ -77,7 +77,13 @@ const formatPrice = (price: string | number): string => {
   return priceNum.toFixed(12).replace(/\.?0+$/, "");
 };
 
-export default function StrategyMonitor() {
+interface StrategyMonitorProps {
+  showLogs?: boolean;
+}
+
+const StrategyMonitor: React.FC<StrategyMonitorProps> = ({
+  showLogs = true,
+}) => {
   const isDark = useSelector(selectIsDark);
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [loading, setLoading] = useState(true);
@@ -313,10 +319,11 @@ export default function StrategyMonitor() {
                 Status
               </p>
               <p
-                className={`text-sm font-bold ${strategy.conditionMet
-                  ? "text-green-600 dark:text-green-400"
-                  : "text-gray-600 dark:text-gray-400"
-                  }`}
+                className={`text-sm font-bold ${
+                  strategy.conditionMet
+                    ? "text-green-600 dark:text-green-400"
+                    : "text-gray-600 dark:text-gray-400"
+                }`}
               >
                 {strategy.conditionMet ? "✅ READY" : "⏳ WAITING"}
               </p>
@@ -326,7 +333,11 @@ export default function StrategyMonitor() {
           <div className="bg-linear-to-r from-blue-50 to-cyan-50 dark:from-blue-500/10 dark:to-cyan-500/10 rounded-xl p-4 border border-blue-200 dark:border-blue-500/30">
             <p className="text-sm text-gray-700 dark:text-gray-300">
               Will{" "}
-              <span className="font-bold text-gray-900 dark:text-white">
+              <span
+                className={`font-bold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
                 {strategy.side}
               </span>{" "}
               <span className="font-bold text-green-600 dark:text-green-400">
@@ -478,10 +489,9 @@ export default function StrategyMonitor() {
           Active Strategies
         </h1>
         <div
-          className={`rounded-2xl p-8 shadow-lg border ${isDark
-            ? "bg-gray-800 border-white/10"
-            : "bg-white border-gray-200"
-            }`}
+          className={`rounded-2xl p-8 shadow-lg border ${
+            isDark ? "bg-gray-800 border-white/10" : "bg-white border-gray-200"
+          }`}
         >
           <div className="flex items-center gap-3">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
@@ -501,10 +511,9 @@ export default function StrategyMonitor() {
           Active Strategies
         </h1>
         <div
-          className={`border-2 rounded-2xl p-6 shadow-lg ${isDark
-            ? "bg-red-900/50 border-red-500"
-            : "bg-red-50 border-red-300"
-            }`}
+          className={`border-2 rounded-2xl p-6 shadow-lg ${
+            isDark ? "bg-red-900/50 border-red-500" : "bg-red-50 border-red-300"
+          }`}
         >
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 bg-red-100 dark:bg-red-500/20 rounded-xl flex items-center justify-center">
@@ -512,8 +521,9 @@ export default function StrategyMonitor() {
             </div>
             <div className="flex-1">
               <p
-                className={`text-lg font-bold mb-2 ${isDark ? "text-red-400" : "text-red-700"
-                  }`}
+                className={`text-lg font-bold mb-2 ${
+                  isDark ? "text-red-400" : "text-red-700"
+                }`}
               >
                 Connection Error
               </p>
@@ -540,20 +550,21 @@ export default function StrategyMonitor() {
           Active Strategies
         </h1>
         <div
-          className={`rounded-2xl p-8 shadow-lg border text-center ${isDark
-            ? "bg-gray-800 border-white/10"
-            : "bg-white border-gray-200"
-            }`}
+          className={`rounded-2xl p-8 shadow-lg border text-center ${
+            isDark ? "bg-gray-800 border-white/10" : "bg-white border-gray-200"
+          }`}
         >
           <div
-            className={`w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 ${isDark ? "bg-slate-700" : "bg-gray-100"
-              }`}
+            className={`w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 ${
+              isDark ? "bg-slate-700" : "bg-gray-100"
+            }`}
           >
             <span className="text-5xl">📊</span>
           </div>
           <p
-            className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"
-              }`}
+            className={`text-xl font-bold mb-2 ${
+              isDark ? "text-white" : "text-gray-900"
+            }`}
           >
             No Active Strategies
           </p>
@@ -568,73 +579,83 @@ export default function StrategyMonitor() {
   return (
     <div className="space-y-6">
       {/* Header */}
+
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
           Active Strategies
         </h1>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-md border ${isDark
-              ? "bg-gray-800 border-white/10"
-              : "bg-white border-gray-200"
-              }`}
-          >
-            <div className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-            </div>
-            <span
-              className={`text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"
-                }`}
-            >
-              Next update in{" "}
-              <span
-                className={`font-mono ${isDark ? "text-green-400" : "text-green-600"
-                  }`}
-              >
-                {nextUpdateIn}s
-              </span>
-            </span>
-          </div>
-
-          <button
-            onClick={() => setShowActivityLog(!showActivityLog)}
-            className={`px-4 py-2.5 rounded-xl font-semibold transition-all shadow-md ${showActivityLog
-              ? "bg-linear-to-r from-blue-500 to-cyan-500 text-white"
-              : isDark
-                ? "bg-gray-800 text-gray-300 border border-white/10"
-                : "bg-white text-gray-700 border border-gray-200"
-              }`}
-          >
-            📋 Activity Log
-          </button>
-
-          {lastUpdateTime && (
+        {showLogs && (
+          <div className="flex items-center gap-3 flex-wrap">
             <div
-              className={`text-xs px-3 py-2 rounded-lg border ${isDark
-                ? "text-gray-400 bg-gray-800 border-white/10"
-                : "text-gray-500 bg-white border-gray-200"
-                }`}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-md border ${
+                isDark
+                  ? "bg-gray-800 border-white/10"
+                  : "bg-white border-gray-200"
+              }`}
             >
-              Updated: {lastUpdateTime.toLocaleTimeString()}
+              <div className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              </div>
+              <span
+                className={`text-sm font-medium ${
+                  isDark ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                Next update in{" "}
+                <span
+                  className={`font-mono ${
+                    isDark ? "text-green-400" : "text-green-600"
+                  }`}
+                >
+                  {nextUpdateIn}s
+                </span>
+              </span>
             </div>
-          )}
-        </div>
+
+            <button
+              onClick={() => setShowActivityLog(!showActivityLog)}
+              className={`px-4 py-2.5 rounded-xl font-semibold transition-all shadow-md ${
+                showActivityLog
+                  ? "bg-linear-to-r from-blue-500 to-cyan-500 text-white"
+                  : isDark
+                  ? "bg-gray-800 text-gray-300 border border-white/10"
+                  : "bg-white text-gray-700 border border-gray-200"
+              }`}
+            >
+              📋 Activity Log
+            </button>
+
+            {lastUpdateTime && (
+              <div
+                className={`text-xs px-3 py-2 rounded-lg border ${
+                  isDark
+                    ? "text-gray-400 bg-gray-800 border-white/10"
+                    : "text-gray-500 bg-white border-gray-200"
+                }`}
+              >
+                Updated: {lastUpdateTime.toLocaleTimeString()}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div
-          className={`space-y-4 ${showActivityLog ? "lg:col-span-2" : "lg:col-span-3"
-            }`}
+          className={`space-y-4 ${
+            showActivityLog ? "lg:col-span-2" : "lg:col-span-3"
+          }`}
         >
           {strategies.map((strategy) => (
             <div
               key={strategy.id}
-              className={`rounded-2xl shadow-lg p-6 border hover:shadow-xl transition-all ${isDark
-                ? "bg-linear-to-br from-gray-800 to-gray-900 border-white/10"
-                : "bg-linear-to-br from-white to-gray-50 border-gray-200"
-                }`}
+              className={`rounded-2xl shadow-lg p-6 border hover:shadow-xl transition-all ${
+                isDark
+                  ? "bg-linear-to-br from-gray-800 to-gray-900 border-white/10"
+                  : "bg-linear-to-br from-white to-gray-50 border-gray-200"
+              }`}
             >
               {/* Strategy Header */}
               <div className="flex justify-between items-start mb-5">
@@ -644,14 +665,16 @@ export default function StrategyMonitor() {
                   </div>
                   <div>
                     <h2
-                      className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"
-                        }`}
+                      className={`text-xl font-bold ${
+                        isDark ? "text-white" : "text-gray-900"
+                      }`}
                     >
                       {strategy.name}
                     </h2>
                     <p
-                      className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"
-                        }`}
+                      className={`text-sm ${
+                        isDark ? "text-gray-400" : "text-gray-600"
+                      }`}
                     >
                       {strategy.tradingPair}
                     </p>
@@ -659,10 +682,11 @@ export default function StrategyMonitor() {
                 </div>
                 <div className="flex gap-2">
                   <span
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold ${strategy.isActive
-                      ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
-                      : "bg-gray-400 text-white"
-                      }`}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold ${
+                      strategy.isActive
+                        ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
+                        : "bg-gray-400 text-white"
+                    }`}
                   >
                     {strategy.isActive ? "⚡ Active" : "⏸️ Stopped"}
                   </span>
@@ -702,13 +726,14 @@ export default function StrategyMonitor() {
         </div>
 
         {/* Activity Log */}
-        {showActivityLog && (
+        {showActivityLog && showLogs && (
           <div className="lg:col-span-1">
             <div
-              className={`rounded-2xl shadow-lg border sticky top-6 overflow-hidden ${isDark
-                ? "bg-gray-800 border-white/10"
-                : "bg-white border-gray-200"
-                }`}
+              className={`rounded-2xl shadow-lg border sticky top-6 overflow-hidden ${
+                isDark
+                  ? "bg-gray-800 border-white/10"
+                  : "bg-white border-gray-200"
+              }`}
             >
               <div className="bg-linear-to-r from-blue-500 to-cyan-500 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -737,8 +762,9 @@ export default function StrategyMonitor() {
               <div className="h-96 overflow-y-auto p-4 space-y-2">
                 {activityLogs.length === 0 ? (
                   <div
-                    className={`text-center py-8 ${isDark ? "text-gray-400" : "text-gray-500"
-                      }`}
+                    className={`text-center py-8 ${
+                      isDark ? "text-gray-400" : "text-gray-500"
+                    }`}
                   >
                     <p className="text-sm">No logs yet</p>
                     <p className="text-xs mt-1">
@@ -772,7 +798,9 @@ export default function StrategyMonitor() {
                                 </span>
                               )}
                             </div>
-                            <p className={`${style.text} leading-relaxed wrap-break-word`}>
+                            <p
+                              className={`${style.text} leading-relaxed wrap-break-word`}
+                            >
                               {log.message}
                             </p>
                             <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
@@ -794,24 +822,27 @@ export default function StrategyMonitor() {
       {showDeleteModal && strategyToDelete && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div
-            className={`rounded-2xl p-8 max-w-md w-full border shadow-2xl ${isDark
-              ? "bg-slate-900 border-white/10"
-              : "bg-white border-gray-300"
-              }`}
+            className={`rounded-2xl p-8 max-w-md w-full border shadow-2xl ${
+              isDark
+                ? "bg-slate-900 border-white/10"
+                : "bg-white border-gray-300"
+            }`}
           >
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-red-100 dark:bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-4xl">⚠️</span>
               </div>
               <h3
-                className={`text-2xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"
-                  }`}
+                className={`text-2xl font-bold mb-2 ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
               >
                 Delete Strategy?
               </h3>
               <p
-                className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"
-                  }`}
+                className={`text-sm ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
               >
                 This will permanently delete the strategy and any pending
                 orders.
@@ -824,10 +855,11 @@ export default function StrategyMonitor() {
                   setShowDeleteModal(false);
                   setStrategyToDelete(null);
                 }}
-                className={`flex-1 px-6 py-3 font-semibold rounded-xl transition-all ${isDark
-                  ? "bg-gray-700 hover:bg-gray-600 text-white"
-                  : "bg-gray-200 hover:bg-gray-300 text-gray-900"
-                  }`}
+                className={`flex-1 px-6 py-3 font-semibold rounded-xl transition-all ${
+                  isDark
+                    ? "bg-gray-700 hover:bg-gray-600 text-white"
+                    : "bg-gray-200 hover:bg-gray-300 text-gray-900"
+                }`}
               >
                 Cancel
               </button>
@@ -843,4 +875,6 @@ export default function StrategyMonitor() {
       )}
     </div>
   );
-}
+};
+
+export default StrategyMonitor;

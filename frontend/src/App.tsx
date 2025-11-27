@@ -18,12 +18,13 @@ import WalletManagementPage from "./pages/WalletManagementPage";
 import StrategiesPage from "./pages/StrategiesPage";
 import { Toaster } from "sonner";
 import OrdersPage from "./pages/OrdersPage";
-import { fetchCurrentUser } from "./redux/authSlice";
+import { fetchCurrentUser, selectAuth } from "./redux/authSlice";
 import Footer from "./components/Footer";
 import NotFoundPage from "./components/NotFoundPage";
 import ProfilePage from "./components/ProfilePage";
 import LandingPage from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
+import { fetchDashboardData } from "./redux/dashboardSlice";
 
 export const WalletContext = React.createContext<BrowserWallet | null>(null);
 
@@ -33,6 +34,7 @@ function App() {
   const theme = useSelector(selectTheme);
   const [wallet, setWallet] = useState<BrowserWallet | null>(null);
   const isDark = useSelector(selectIsDark);
+  const { isAuthenticated } = useSelector(selectAuth);
 
   const { loading: authLoading } = useSelector(
     (state: RootState) => state.auth
@@ -41,6 +43,12 @@ function App() {
   useEffect(() => {
     dispatch(fetchCurrentUser());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchDashboardData());
+    }
+  }, [isAuthenticated, dispatch]);
 
   // ✅ Apply theme with smooth transition
   useEffect(() => {

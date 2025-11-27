@@ -8,6 +8,7 @@ import { Op } from "sequelize";
 import axios from "axios";
 import { getAdaPriceCached } from "../utils/helper.js";
 import { CardanoService } from "./cardano.service.js";
+import { strategyManager } from "./strategyManager.service.js";
 
 export class DashboardService {
   // Get complete dashboard data
@@ -151,15 +152,7 @@ export class DashboardService {
 
   // Get active strategies
   async getActiveStrategies(walletAddress: string) {
-    const strategies = await Strategy.findAll({
-      where: {
-        walletAddress,
-        isActive: true,
-      },
-      order: [["createdAt", "DESC"]],
-      limit: 10,
-    });
-
+    const strategies = strategyManager.getAllActiveStrategies(walletAddress);
     return strategies;
   }
 

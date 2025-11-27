@@ -25,18 +25,17 @@ export default function ActiveStrategies({ data }: ActiveStrategiesProps) {
   const strategies = useMemo(() => {
     if (!data || data.length === 0) return [];
 
-    return data.map((s) => ({
-      name: s.name,
-      type: s.type,
-      pnl: s.profitLoss,
-      status:
-        s.status === "active"
-          ? "active"
-          : s.status === "waiting"
-          ? "waiting"
-          : "paused",
-      progress: s.progress,
-      positive: s.positive,
+    return data.map((s: any) => ({
+      name: s.config.name,
+      type: s.status.strategy || "Unknown",
+      profitLoss: s.status.priceDifferencePercent
+        ? (s.status.priceDifferencePercent > 0 ? "+" : "") +
+          (s.status.priceDifferencePercent * 100).toFixed(2) +
+          "%"
+        : "0%",
+      status: s.config.isActive ? "active" : "paused",
+      progress: 0,
+      positive: s.status.priceDifferencePercent >= 0,
     }));
   }, [data]);
 
@@ -178,15 +177,6 @@ export default function ActiveStrategies({ data }: ActiveStrategiesProps) {
                   >
                     {strategy.type}
                   </span>
-                </td>
-                <td
-                  className={`text-right py-4 px-4 font-bold ${
-                    strategy.positive
-                      ? "text-green-600 dark:text-green-400"
-                      : "text-red-600 dark:text-red-400"
-                  }`}
-                >
-                  {strategy.pnl}
                 </td>
                 <td className="text-center py-4 px-4">
                   <span

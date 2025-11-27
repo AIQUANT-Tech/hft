@@ -18,6 +18,7 @@ import {
   REGISTER,
 } from "redux-persist";
 import themeReducer from "./themeSlice";
+import dashboardReducer from "./dashboardSlice";
 import storage from "redux-persist/lib/storage";
 import storageSession from "redux-persist/lib/storage/session";
 import authReducer from "./authSlice";
@@ -52,6 +53,7 @@ const rootReducer = combineReducers({
   price: priceReducer,
   theme: themeReducer,
   auth: authReducer,
+  dashboard: dashboardReducer,
 });
 
 export const store = configureStore({
