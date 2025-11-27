@@ -49,7 +49,8 @@ export default function HoldingsTable({ data }: HoldingsTableProps) {
         </div>
         <div className="h-24 flex items-center justify-center">
           <p className={isDark ? "text-slate-400" : "text-gray-600"}>
-            No holdings data available
+            No holdings data available. Try creating or importing a wallet and
+            funding it.
           </p>
         </div>
       </div>

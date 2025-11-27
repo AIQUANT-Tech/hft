@@ -28,8 +28,7 @@ import dashboardRoutes from "./routes/dashboard.routes.js";
 // src/models/index.ts
 
 import { Portfolio } from "./models/portfolio.model.js";
-import { Strategy } from "./models/strategy.model.js";
-import { ActivityLog } from "./models/activityLog.model.js";
+import Strategy from "./models/strategy.model.js";
 import { PortfolioHistory } from "./models/portfolioHistory.model.js";
 import dotenv from "dotenv";
 dotenv.config();
@@ -43,7 +42,11 @@ dotenv.config();
   // FIX: Proper Socket.IO CORS configuration
   const io = new SocketIOServer(httpServer, {
     cors: {
-      origin: [process.env.FRONTEND_URL!, process.env.FRONTEND_URL_2!],
+      origin: [
+        process.env.FRONTEND_URL!,
+        process.env.FRONTEND_URL_2!,
+        process.env.FRONTEND_URL_3!,
+      ],
       methods: ["GET", "POST"],
       credentials: true,
     },
@@ -62,7 +65,6 @@ dotenv.config();
   await User.sync();
   await Portfolio.sync();
   await Strategy.sync();
-  await ActivityLog.sync();
   await PortfolioHistory.sync();
   console.log("✅ Database connection OK");
 
@@ -74,7 +76,12 @@ dotenv.config();
 
   app.use(
     cors({
-      origin: [process.env.FRONTEND_URL!, process.env.FRONTEND_URL_2!],
+      origin: [
+        process.env.FRONTEND_URL!,
+        process.env.FRONTEND_URL_2!,
+
+        process.env.FRONTEND_URL_3!,
+      ],
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],

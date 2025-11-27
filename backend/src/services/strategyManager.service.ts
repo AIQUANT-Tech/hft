@@ -7,6 +7,7 @@ import {
 import { ACAStrategy, ACAConfig } from "../strategies/ACAStrategy.js";
 import { logger } from "./logger.service.js";
 import { GridConfig, GridStrategy } from "../strategies/GridStrategy.js";
+import { strategyService } from "./strategy.service.js";
 
 export class StrategyManagerService {
   private strategies: Map<string, BaseStrategy> = new Map();
@@ -66,7 +67,7 @@ export class StrategyManagerService {
     }
   }
 
-  addPriceTargetStrategy(config: PriceTargetConfig): string {
+  async addPriceTargetStrategy(config: PriceTargetConfig): Promise<string> {
     const strategy = new PriceTargetStrategy(config);
 
     if (!strategy.validate()) {
@@ -75,13 +76,27 @@ export class StrategyManagerService {
     }
 
     this.strategies.set(config.id, strategy);
+
+    // ✅ Save to database
+    await strategyService.upsertStrategy({
+      id: config.id,
+      walletAddress: config.walletAddress,
+      name: config.name,
+      type: "price-target",
+      tradingPair: config.tradingPair,
+      baseToken: config.baseToken,
+      quoteToken: config.quoteToken,
+      investedAmount: config.orderAmount?.toString() || "0",
+      config: config,
+    });
+
     logger.success(`Price Target strategy added`, config.name, "strategy");
 
     return config.id;
   }
 
   // ✅ Add ACA Strategy
-  addACAStrategy(config: ACAConfig): string {
+  async addACAStrategy(config: ACAConfig): Promise<string> {
     const strategy = new ACAStrategy(config);
 
     if (!strategy.validate()) {
@@ -94,12 +109,25 @@ export class StrategyManagerService {
     }
 
     this.strategies.set(config.id, strategy);
+    // ✅ Save to database
+    await strategyService.upsertStrategy({
+      id: config.id,
+      walletAddress: config.walletAddress,
+      name: config.name,
+      type: "dca",
+      tradingPair: config.tradingPair,
+      baseToken: config.baseToken,
+      quoteToken: config.quoteToken,
+      investedAmount: config.investmentAmount?.toString() || "0",
+      config: config,
+    });
+
     logger.success(`ACA strategy added`, config.name, "strategy");
 
     return config.id;
   }
 
-  addGridStrategy(config: GridConfig): string {
+  async addGridStrategy(config: GridConfig): Promise<string> {
     const strategy = new GridStrategy(config);
 
     if (!strategy.validate()) {
@@ -112,6 +140,19 @@ export class StrategyManagerService {
     }
 
     this.strategies.set(config.id, strategy);
+    // ✅ Save to database
+    await strategyService.upsertStrategy({
+      id: config.id,
+      walletAddress: config.walletAddress,
+      name: config.name,
+      type: "grid",
+      tradingPair: config.tradingPair,
+      baseToken: config.baseToken,
+      quoteToken: config.quoteToken,
+      investedAmount: config.lastProcessedPrice?.toString() || "0",
+      config: config,
+    });
+
     logger.success(`Grid strategy added`, config.name, "strategy");
 
     return config.id;

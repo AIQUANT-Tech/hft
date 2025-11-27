@@ -1,7 +1,10 @@
-// src/components/dashboard/PortfolioStats.tsx
-
 import { useSelector } from "react-redux";
 import { selectIsDark } from "@/redux/themeSlice";
+import axios from "axios";
+import { API_URL } from "../StrategyMonitor";
+import { useEffect, useState, useRef } from "react";
+
+const REFRESH_INTERVAL = 5000; // 5 seconds
 
 interface PortfolioStatsProps {
   data?: {
@@ -17,8 +20,45 @@ interface PortfolioStatsProps {
 
 export default function PortfolioStats({ data }: PortfolioStatsProps) {
   const isDark = useSelector(selectIsDark);
+  const [activeStrategiesCount, setActiveStrategiesCount] = useState(
+    data?.activeStrategiesCount ?? 0
+  );
+  // Optionally add: const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  // If no data, show loading skeleton or default values
+  // To avoid state update after unmount
+  const mountedRef = useRef(true);
+
+  const fetchStrategies = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/strategy/live`, {
+        timeout: 4000,
+      });
+      if (response.data.success) {
+        const newStrategies = response.data.strategies;
+        // Only update count if component is mounted
+        if (mountedRef.current) setActiveStrategiesCount(newStrategies.length);
+        // Optionally update timestamp: setLastUpdate(new Date());
+      }
+    } catch (err) {
+      // On error, fallback to DB value once; don't spam error logs
+      if (data && mountedRef.current)
+        setActiveStrategiesCount(data.activeStrategiesCount);
+    }
+  };
+
+  useEffect(() => {
+    mountedRef.current = true;
+    fetchStrategies();
+    const interval = setInterval(fetchStrategies, REFRESH_INTERVAL);
+    return () => {
+      mountedRef.current = false;
+      clearInterval(interval);
+    };
+    // Only run on mount
+    // eslint-disable-next-line
+  }, []);
+
+  // If no data, show loading skeleton
   if (!data) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -44,7 +84,7 @@ export default function PortfolioStats({ data }: PortfolioStatsProps) {
       label: "Total Portfolio",
       value: `$${parseFloat(data.totalValueUsd).toFixed(2)}`,
       subValue: `${parseFloat(data.totalValueAda).toFixed(2)} ADA`,
-      change: "+2.5%", // Calculate from historical data
+      change: "+2.5%",
       changeLabel: "vs. Yesterday",
       positive: true,
     },
@@ -81,9 +121,9 @@ export default function PortfolioStats({ data }: PortfolioStatsProps) {
     {
       icon: "📊",
       label: "Active Strategies",
-      value: data.activeStrategiesCount.toString(),
-      subValue: "View All",
-      change: "+2", // Could calculate from historical data
+      value: activeStrategiesCount.toString(),
+      subValue: "",
+      change: "+2",
       changeLabel: "This Week",
       positive: true,
     },

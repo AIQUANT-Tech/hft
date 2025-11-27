@@ -121,7 +121,7 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
         </div>
         <div className="h-[300px] flex items-center justify-center">
           <p className={isDark ? "text-slate-400" : "text-gray-600"}>
-            No historical data available
+            No historical data is available yet 👀. Execute a trade to see data.
           </p>
         </div>
       </div>

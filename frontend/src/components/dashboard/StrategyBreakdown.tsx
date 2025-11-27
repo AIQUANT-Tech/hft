@@ -73,7 +73,8 @@ export default function StrategyBreakdown({ data }: StrategyBreakdownProps) {
       {pieData.length === 0 ? (
         <div className="h-[250px] flex items-center justify-center">
           <p className={isDark ? "text-slate-400" : "text-gray-600"}>
-            No active strategy allocation data
+            No active strategy allocation data yet; Try running a strategy by
+            creating a wallet.
           </p>
         </div>
       ) : (

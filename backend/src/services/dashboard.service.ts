@@ -2,7 +2,6 @@
 
 import Portfolio from "../models/portfolio.model.js";
 import Strategy from "../models/strategy.model.js";
-import ActivityLog from "../models/activityLog.model.js";
 import PortfolioHistory from "../models/portfolioHistory.model.js";
 import { Op } from "sequelize";
 import axios from "axios";
@@ -14,21 +13,18 @@ export class DashboardService {
   // Get complete dashboard data
   async getDashboardData(walletAddress: string) {
     try {
-      const [portfolio, holdings, strategies, activities, history] =
-        await Promise.all([
-          this.getPortfolioStats(walletAddress),
-          this.getHoldings(walletAddress),
-          this.getActiveStrategies(walletAddress),
-          this.getRecentActivities(walletAddress),
-          this.getPortfolioHistory(walletAddress),
-        ]);
+      const [portfolio, holdings, strategies, activities] = await Promise.all([
+        this.getPortfolioStats(walletAddress),
+        this.getHoldings(walletAddress),
+        this.getAllStrategies(walletAddress),
+        this.getPortfolioHistory(walletAddress),
+      ]);
 
       return {
         portfolio,
         holdings,
         strategies,
         activities,
-        history,
       };
     } catch (error) {
       throw new Error(`Failed to fetch dashboard data: ${error}`);
@@ -156,15 +152,25 @@ export class DashboardService {
     return strategies;
   }
 
-  // Get recent activities
-  async getRecentActivities(walletAddress: string, limit: number = 10) {
-    const activities = await ActivityLog.findAll({
-      where: { walletAddress },
-      order: [["createdAt", "DESC"]],
-      limit,
-    });
+  // src/services/dashboard.service.ts
 
-    return activities;
+  async getAllStrategies(ownerAddress: string) {
+    // find all backend wallets for owner address
+    const userWallets: string[] = await CardanoService.getWalletsByOwner(
+      ownerAddress
+    );
+
+    const strategies = await Promise.all(
+      userWallets.map(async (walletAddress) => {
+        const strategies = await Strategy.findAll({
+          where: { walletAddress },
+        });
+        return strategies;
+      })
+    );
+    console.log("strategies", strategies);
+
+    return strategies.flat();
   }
 
   // Get portfolio history for charts
@@ -250,24 +256,6 @@ export class DashboardService {
     } catch (error) {
       throw new Error(`Failed to update portfolio stats: ${error}`);
     }
-  }
-
-  // Log activity
-  async logActivity(data: {
-    walletAddress: string;
-    strategyId?: string;
-    strategyName?: string;
-    action: "BUY" | "SELL" | "CREATE" | "PAUSE" | "RESUME" | "DELETE";
-    status: "pending" | "completed" | "failed";
-    tradingPair?: string;
-    amount?: string;
-    price?: string;
-    profitLoss?: string;
-    txHash?: string;
-    details?: string;
-  }) {
-    const activity = await ActivityLog.create(data);
-    return activity;
   }
 
   // Snapshot portfolio for history (run daily)

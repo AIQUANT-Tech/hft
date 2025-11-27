@@ -3,74 +3,72 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import sequelize from "../config/db.js";
 
-export interface StrategyAttributes {
-  id: string;
+interface StrategyAttributes {
+  id: string; // UUID from strategy config
   walletAddress: string;
   name: string;
   type: "grid" | "dca" | "price-target" | "stop-loss-take-profit";
   tradingPair: string;
   baseToken: string;
   quoteToken: string;
-  poolId: string;
+  investedAmount: string; // ADA invested
+  currentValue: string; // Current position value in ADA
+  profitLoss: string; // P&L in ADA
+  profitLossPercent: string; // P&L percentage
   isActive: boolean;
-  config: object; // JSON config for strategy-specific settings
-  profitLoss: string;
-  profitLossPercent: string;
-  investedAmount: string;
-  currentValue: string;
+  status: "active" | "paused" | "completed" | "failed";
+  config: string; // JSON stringified config
   totalTrades: number;
   successfulTrades: number;
-  progress: number; // 0-100
-  startedAt: Date;
-  lastExecutedAt?: Date;
+  failedTrades: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 interface StrategyCreationAttributes
-  extends Optional<StrategyAttributes, "id"> {}
+  extends Optional<StrategyAttributes, "id" | "createdAt" | "updatedAt"> {}
 
-export class Strategy
+class Strategy
   extends Model<StrategyAttributes, StrategyCreationAttributes>
   implements StrategyAttributes
 {
-  declare id: string;
-  declare walletAddress: string;
-  declare name: string;
-  declare type: "grid" | "dca" | "price-target" | "stop-loss-take-profit";
-  declare tradingPair: string;
-  declare baseToken: string;
-  declare quoteToken: string;
-  declare poolId: string;
-  declare isActive: boolean;
-  declare config: object;
-  declare profitLoss: string;
-  declare profitLossPercent: string;
-  declare investedAmount: string;
-  declare currentValue: string;
-  declare totalTrades: number;
-  declare successfulTrades: number;
-  declare progress: number;
-  declare startedAt: Date;
-  declare lastExecutedAt?: Date;
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
+  public id!: string;
+  public walletAddress!: string;
+  public name!: string;
+  public type!: "grid" | "dca" | "price-target" | "stop-loss-take-profit";
+  public tradingPair!: string;
+  public baseToken!: string;
+  public quoteToken!: string;
+  public investedAmount!: string;
+  public currentValue!: string;
+  public profitLoss!: string;
+  public profitLossPercent!: string;
+  public isActive!: boolean;
+  public status!: "active" | "paused" | "completed" | "failed";
+  public config!: string;
+  public totalTrades!: number;
+  public successfulTrades!: number;
+  public failedTrades!: number;
+
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 }
 
 Strategy.init(
   {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
+      type: DataTypes.STRING,
       primaryKey: true,
     },
     walletAddress: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING,
       allowNull: false,
-      field: "wallet_address",
+      validate: {
+        notEmpty: true,
+      },
     },
     name: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     type: {
@@ -83,103 +81,71 @@ Strategy.init(
       allowNull: false,
     },
     tradingPair: {
-      type: DataTypes.STRING(50),
+      type: DataTypes.STRING,
       allowNull: false,
-      field: "trading_pair",
     },
     baseToken: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING,
       allowNull: false,
-      field: "base_token",
     },
     quoteToken: {
-      type: DataTypes.STRING(50),
+      type: DataTypes.STRING,
       allowNull: false,
-      field: "quote_token",
     },
-    poolId: {
-      type: DataTypes.STRING(255),
+    investedAmount: {
+      type: DataTypes.DECIMAL(20, 6),
       allowNull: false,
-      field: "pool_id",
+      defaultValue: "0",
+    },
+    currentValue: {
+      type: DataTypes.DECIMAL(20, 6),
+      allowNull: false,
+      defaultValue: "0",
+    },
+    profitLoss: {
+      type: DataTypes.DECIMAL(20, 6),
+      allowNull: false,
+      defaultValue: "0",
+    },
+    profitLossPercent: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: "0",
     },
     isActive: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true,
-      field: "is_active",
+    },
+    status: {
+      type: DataTypes.ENUM("active", "paused", "completed", "failed"),
+      allowNull: false,
+      defaultValue: "active",
     },
     config: {
-      type: DataTypes.JSON,
+      type: DataTypes.TEXT,
       allowNull: false,
-      defaultValue: {},
-    },
-    profitLoss: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      defaultValue: "0",
-      field: "profit_loss",
-    },
-    profitLossPercent: {
-      type: DataTypes.STRING(10),
-      allowNull: false,
-      defaultValue: "0",
-      field: "profit_loss_percent",
-    },
-    investedAmount: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      defaultValue: "0",
-      field: "invested_amount",
-    },
-    currentValue: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      defaultValue: "0",
-      field: "current_value",
     },
     totalTrades: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
-      field: "total_trades",
     },
     successfulTrades: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
-      field: "successful_trades",
     },
-    progress: {
+    failedTrades: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
-      validate: {
-        min: 0,
-        max: 100,
-      },
-    },
-    startedAt: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW,
-      field: "started_at",
-    },
-    lastExecutedAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      field: "last_executed_at",
     },
   },
   {
     sequelize,
     tableName: "strategies",
     timestamps: true,
-    underscored: true,
-    indexes: [
-      { fields: ["wallet_address"] },
-      { fields: ["type"] },
-      { fields: ["is_active"] },
-    ],
   }
 );
 

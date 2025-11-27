@@ -30,12 +30,6 @@ router.get(
   dashboardController.getStrategies.bind(dashboardController)
 );
 
-// GET /api/dashboard/activities?limit=10 - Get recent activities
-router.get(
-  "/activities",
-  dashboardController.getActivities.bind(dashboardController)
-);
-
 // GET /api/dashboard/history?days=30 - Get portfolio history
 router.get(
   "/history",

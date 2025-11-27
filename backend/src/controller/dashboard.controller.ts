@@ -125,41 +125,6 @@ export class DashboardController {
     }
   }
 
-  // GET /api/dashboard/activities
-  async getActivities(req: AuthenticatedRequest, res: Response) {
-    try {
-      const walletAddress = req.user?.walletAddress;
-      const limit = parseInt(req.query.limit as string) || 10;
-
-      if (!walletAddress) {
-        return res.status(401).json({
-          success: false,
-          error: "Wallet address not found",
-        });
-      }
-
-      const activities = await dashboardService.getRecentActivities(
-        walletAddress,
-        limit
-      );
-
-      res.json({
-        success: true,
-        data: activities,
-      });
-    } catch (error: any) {
-      logger.error(
-        `Activities fetch error: ${error.message}`,
-        undefined,
-        "api"
-      );
-      res.status(500).json({
-        success: false,
-        error: "Failed to fetch activities",
-      });
-    }
-  }
-
   // GET /api/dashboard/history
   async getHistory(req: AuthenticatedRequest, res: Response) {
     try {
