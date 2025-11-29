@@ -1,5 +1,4 @@
 // src/components/CreateStrategyForm.tsx
-
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -7,13 +6,18 @@ import { useSelector } from "react-redux";
 import PriceTargetForm from "./strategies/PriceTargetForm";
 import ACAForm from "./strategies/ACAForm";
 import GridTradingForm from "./strategies/GridTradingForm";
+import StopLossTakeProfitForm from "./strategies/StopLossTakeProfitForm";
 import { selectAuth } from "@/redux/authSlice";
 import type { Token } from "@/redux/tokensSlice";
 import { selectIsDark } from "@/redux/themeSlice";
 
 const API_URL = import.meta.env.VITE_SERVER_URL;
 
-type StrategyType = "PRICE_TARGET" | "ACA" | "GRID_TRADING";
+type StrategyType =
+  | "PRICE_TARGET"
+  | "ACA"
+  | "GRID_TRADING"
+  | "STOP_LOSS_TAKE_PROFIT";
 
 export default function CreateStrategyForm() {
   const isDark = useSelector(selectIsDark);
@@ -63,91 +67,178 @@ export default function CreateStrategyForm() {
       type: "PRICE_TARGET" as const,
       name: "Price Target",
       icon: "🎯",
-      description: "Buy or sell when price reaches a target",
-      color: "from-blue-500 to-cyan-500",
+      description: "Buy/sell when price hits target",
     },
     {
       type: "ACA" as const,
-      name: "ACA (ADA Cost Average)",
+      name: "DCA (Dollar Cost Average)",
       icon: "📊",
-      description: "Buy fixed amount at regular intervals",
-      color: "from-green-500 to-emerald-500",
+      description: "Buy fixed amounts regularly",
     },
     {
       type: "GRID_TRADING" as const,
       name: "Grid Trading",
       icon: "📐",
-      description: "Place multiple buy/sell orders in a price range",
-      color: "from-purple-500 to-pink-500",
+      description: "Multiple orders in price range",
+    },
+    {
+      type: "STOP_LOSS_TAKE_PROFIT" as const, // NEW
+      name: "Stop Loss / Take Profit",
+      icon: "🛡️️",
+      description: "Auto sell at loss/profit levels",
     },
   ];
 
+  const getStrategyColor = (type: StrategyType) => {
+    const colors: Record<StrategyType, string> = {
+      PRICE_TARGET: "from-blue-500 to-cyan-500",
+      ACA: "from-green-500 to-emerald-500",
+      GRID_TRADING: "from-purple-500 to-pink-500",
+      STOP_LOSS_TAKE_PROFIT: "from-orange-500 to-red-500",
+    };
+    return colors[type];
+  };
+
   return (
     <div
-      className={`rounded-2xl p-6 shadow-lg border ${
+      className={`rounded-2xl p-8 shadow-xl border ${
         isDark
           ? "bg-linear-to-br from-slate-900 to-slate-800 border-white/10 shadow-slate-900/50"
-          : "bg-linear-to-br from-white to-gray-50 border-gray-300"
+          : "bg-linear-to-br from-white to-gray-50 border-gray-200 shadow-lg"
       }`}
     >
-      <h3
-        className={`text-2xl font-bold mb-6 ${
-          isDark ? "text-white" : "text-gray-900"
-        }`}
-      >
-        📝 Create New Strategy
-      </h3>
-
-      {/* Strategy Type Selector */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        {strategies.map((strategy) => (
-          <button
-            key={strategy.type}
-            onClick={() => setSelectedStrategy(strategy.type)}
-            className={`relative p-6 rounded-2xl border-2 transition-all hover:scale-105 ${
-              selectedStrategy === strategy.type
-                ? `bg-linear-to-br ${strategy.color} border-transparent text-white shadow-xl`
-                : isDark
-                ? "bg-slate-800 border-white/10 text-white hover:border-white/20"
-                : "bg-white border-gray-200 text-gray-900 hover:border-gray-300"
+      <div className="flex items-center gap-3 mb-8">
+        <div className="p-3 bg-blue-500/20 rounded-2xl">
+          <span className="text-2xl">📝</span>
+        </div>
+        <div>
+          <h3
+            className={`text-3xl font-bold ${
+              isDark ? "text-white" : "text-gray-900"
             }`}
           >
-            <div className="text-center">
-              <div className="text-5xl mb-3">{strategy.icon}</div>
-              <h4 className="font-bold text-lg mb-2">{strategy.name}</h4>
-              <p
-                className={`text-sm ${
-                  selectedStrategy === strategy.type
-                    ? "text-white/90"
-                    : isDark
-                    ? "text-gray-400"
-                    : "text-gray-600"
-                }`}
-              >
-                {strategy.description}
-              </p>
-            </div>
-            {selectedStrategy === strategy.type && (
-              <div className="absolute top-3 right-3">
-                <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                  <span className="text-sm">✓</span>
-                </div>
-              </div>
-            )}
-          </button>
-        ))}
+            Create New Strategy
+          </h3>
+          <p
+            className={`text-sm ${isDark ? "text-slate-400" : "text-gray-600"}`}
+          >
+            Select strategy type and configure parameters
+          </p>
+        </div>
       </div>
 
-      {/* Strategy Form */}
-      {selectedStrategy === "PRICE_TARGET" && (
-        <PriceTargetForm tokens={tokens} wallets={wallets} loading={loading} />
-      )}
-      {selectedStrategy === "ACA" && (
-        <ACAForm tokens={tokens} wallets={wallets} loading={loading} />
-      )}
-      {selectedStrategy === "GRID_TRADING" && (
-        <GridTradingForm tokens={tokens} wallets={wallets} loading={loading} />
-      )}
+      {/* Strategy Type Dropdown */}
+      <div className="mb-8">
+        <label
+          className={`block text-sm font-semibold mb-3 ${
+            isDark ? "text-white" : "text-gray-900"
+          }`}
+        >
+          Strategy Type <span className="text-red-500">*</span>
+        </label>
+        <div className="relative">
+          <select
+            value={selectedStrategy}
+            onChange={(e) =>
+              setSelectedStrategy(e.target.value as StrategyType)
+            }
+            className={`w-full p-4 pl-12 pr-10 rounded-2xl border-2 font-semibold text-lg transition-all focus:outline-none focus:ring-4 ${
+              isDark
+                ? "bg-slate-800 border-white/20 text-white focus:border-blue-500 focus:ring-blue-500/20"
+                : "bg-white border-gray-200 text-gray-900 focus:border-blue-500 focus:ring-blue-500/20 shadow-sm"
+            }`}
+          >
+            {strategies.map((strategy) => (
+              <option key={strategy.type} value={strategy.type}>
+                {strategy.icon} {strategy.name}
+              </option>
+            ))}
+          </select>
+          <div
+            className={`absolute left-4 top-1/2 -translate-y-1/2 ${
+              isDark ? "text-slate-400" : "text-gray-500"
+            }`}
+          >
+            {strategies.find((s) => s.type === selectedStrategy)?.icon}
+          </div>
+          <div
+            className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none ${
+              isDark ? "text-slate-400" : "text-gray-500"
+            }`}
+          >
+            ▼
+          </div>
+        </div>
+      </div>
+
+      {/* Strategy Preview Card */}
+      <div
+        className={`p-6 rounded-2xl mb-8 border ${
+          isDark
+            ? "bg-slate-800/50 border-white/10"
+            : "bg-blue-50 border-blue-100"
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className={`p-3 rounded-2xl bg-linear-to-r ${getStrategyColor(
+              selectedStrategy
+            )} shadow-lg`}
+          >
+            <span className="text-2xl opacity-90">
+              {strategies.find((s) => s.type === selectedStrategy)?.icon}
+            </span>
+          </div>
+          <div>
+            <h4
+              className={`font-bold text-xl ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+            >
+              {strategies.find((s) => s.type === selectedStrategy)?.name}
+            </h4>
+            <p
+              className={`text-sm ${
+                isDark ? "text-slate-300" : "text-gray-700"
+              }`}
+            >
+              {strategies.find((s) => s.type === selectedStrategy)?.description}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Dynamic Strategy Forms */}
+      <div
+        className={`space-y-6 animate-in fade-in duration-500 ${
+          loading ? "opacity-50 pointer-events-none" : ""
+        }`}
+      >
+        {selectedStrategy === "PRICE_TARGET" && (
+          <PriceTargetForm
+            tokens={tokens}
+            wallets={wallets}
+            loading={loading}
+          />
+        )}
+        {selectedStrategy === "ACA" && (
+          <ACAForm tokens={tokens} wallets={wallets} loading={loading} />
+        )}
+        {selectedStrategy === "GRID_TRADING" && (
+          <GridTradingForm
+            tokens={tokens}
+            wallets={wallets}
+            loading={loading}
+          />
+        )}
+        {selectedStrategy === "STOP_LOSS_TAKE_PROFIT" && (
+          <StopLossTakeProfitForm
+            tokens={tokens}
+            wallets={wallets}
+            loading={loading}
+          />
+        )}
+      </div>
     </div>
   );
 }

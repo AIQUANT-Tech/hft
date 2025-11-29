@@ -1,6 +1,5 @@
 // src/components/dashboard/PortfolioChart.tsx
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { selectIsDark } from "@/redux/themeSlice";
 import {
@@ -15,9 +14,9 @@ import {
 } from "recharts";
 
 interface PortfolioHistoryItem {
-  date: string;
+  date: string | Date;
   totalValueAda: string;
-  totalValueUsd: string;
+  totalValueUsd?: string;
   profitLoss: string;
 }
 
@@ -32,74 +31,98 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
 
   const timeframes = ["1W", "1M", "3M", "1Y", "All"];
 
+  const formatChartData = useCallback(
+    (historyData: PortfolioHistoryItem[], timeframe: string) => {
+      if (!historyData || historyData.length === 0) {
+        setChartData([]);
+        return;
+      }
+
+      const now = new Date();
+      let filteredData = historyData;
+
+      const parseDate = (d: string | Date) =>
+        typeof d === "string"
+          ? new Date(d)
+          : d instanceof Date
+          ? d
+          : new Date(String(d));
+
+      switch (timeframe) {
+        case "1W": {
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          filteredData = historyData.filter(
+            (item) => parseDate(item.date) >= weekAgo
+          );
+          break;
+        }
+        case "1M": {
+          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          filteredData = historyData.filter(
+            (item) => parseDate(item.date) >= monthAgo
+          );
+          break;
+        }
+        case "3M": {
+          const threeMonthsAgo = new Date(
+            now.getTime() - 90 * 24 * 60 * 60 * 1000
+          );
+          filteredData = historyData.filter(
+            (item) => parseDate(item.date) >= threeMonthsAgo
+          );
+          break;
+        }
+        case "1Y": {
+          const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+          filteredData = historyData.filter(
+            (item) => parseDate(item.date) >= yearAgo
+          );
+          break;
+        }
+        case "All":
+        default:
+          filteredData = historyData;
+      }
+
+      // sort by date ascending to ensure chart order
+      filteredData.sort(
+        (a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime()
+      );
+
+      const formatted = filteredData.map((item) => {
+        const dateObj = parseDate(item.date);
+        const formattedDate = dateObj.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+
+        const portfolioVal = Number(item.totalValueAda || "0");
+        const profit = Number(item.profitLoss || "0");
+
+        return {
+          date: formattedDate,
+          portfolio: Number.isFinite(portfolioVal)
+            ? parseFloat(portfolioVal.toFixed(2))
+            : 0,
+          profit: Number.isFinite(profit) ? parseFloat(profit.toFixed(2)) : 0,
+          rawDate: dateObj.toISOString().split("T")[0],
+        };
+      });
+
+      setChartData(formatted);
+    },
+    []
+  );
+
   useEffect(() => {
     if (data && data.length > 0) {
       formatChartData(data, timeframe);
+    } else {
+      setChartData([]);
     }
-  }, [data, timeframe]);
+  }, [data, timeframe, formatChartData]);
 
-  const formatChartData = (
-    historyData: PortfolioHistoryItem[],
-    timeframe: string
-  ) => {
-    // Filter data based on timeframe
-    const now = new Date();
-    let filteredData = historyData;
-
-    switch (timeframe) {
-      case "1W":
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        filteredData = historyData.filter(
-          (item) => new Date(item.date) >= weekAgo
-        );
-        break;
-      case "1M":
-        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        filteredData = historyData.filter(
-          (item) => new Date(item.date) >= monthAgo
-        );
-        break;
-      case "3M":
-        const threeMonthsAgo = new Date(
-          now.getTime() - 90 * 24 * 60 * 60 * 1000
-        );
-        filteredData = historyData.filter(
-          (item) => new Date(item.date) >= threeMonthsAgo
-        );
-        break;
-      case "1Y":
-        const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-        filteredData = historyData.filter(
-          (item) => new Date(item.date) >= yearAgo
-        );
-        break;
-      case "All":
-        filteredData = historyData;
-        break;
-    }
-
-    // Format data for chart
-    const formatted = filteredData.map((item) => {
-      const dateObj = new Date(item.date);
-      const formattedDate = dateObj.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-
-      const portfolioValue = parseFloat(item.totalValueAda);
-      const profit = parseFloat(item.profitLoss);
-
-      return {
-        date: formattedDate,
-        portfolio: parseFloat(portfolioValue.toFixed(2)),
-        profit: parseFloat(profit.toFixed(2)),
-      };
-    });
-
-    setChartData(formatted);
-  };
-
-  // Loading skeleton
+  // Loading / empty
   if (!data || data.length === 0) {
     return (
       <div
@@ -186,7 +209,7 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
             <YAxis
               stroke={isDark ? "#94a3b8" : "#6b7280"}
               style={{ fontSize: "12px" }}
-              tickFormatter={(value) => `${value.toFixed(0)}₳`}
+              tickFormatter={(value) => `${Math.round(value)}₳`}
             />
             <Tooltip
               contentStyle={{
@@ -195,7 +218,7 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                 borderRadius: "8px",
                 color: isDark ? "#f1f5f9" : "#1f2937",
               }}
-              formatter={(value: any) => [`${value.toFixed(2)}₳`, ""]}
+              formatter={(value: any) => [`${Number(value).toFixed(2)}₳`, ""]}
             />
             <Legend />
             <Line
@@ -234,7 +257,6 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
         </div>
       </div>
 
-      {/* Summary stats below chart */}
       {chartData.length > 0 && (
         <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
           <div className="grid grid-cols-3 gap-4 text-center">

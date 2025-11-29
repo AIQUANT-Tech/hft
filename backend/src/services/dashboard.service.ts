@@ -1,5 +1,4 @@
 // src/services/dashboard.service.ts
-
 import Portfolio from "../models/portfolio.model.js";
 import Strategy from "../models/strategy.model.js";
 import PortfolioHistory from "../models/portfolioHistory.model.js";
@@ -13,19 +12,20 @@ export class DashboardService {
   // Get complete dashboard data
   async getDashboardData(walletAddress: string) {
     try {
-      const [portfolio, holdings, strategies, activities] = await Promise.all([
+      // Ensure portfolio stats are fresh for user's wallets
+      const userWallets = await CardanoService.getWalletsByOwner(walletAddress);
+      await Promise.all(
+        userWallets.map((wallet) => this.updatePortfolioStats(wallet))
+      );
+
+      const [portfolio, holdings, strategies, history] = await Promise.all([
         this.getPortfolioStats(walletAddress),
         this.getHoldings(walletAddress),
         this.getAllStrategies(walletAddress),
         this.getPortfolioHistory(walletAddress),
       ]);
 
-      return {
-        portfolio,
-        holdings,
-        strategies,
-        activities,
-      };
+      return { portfolio, holdings, strategies, history };
     } catch (error) {
       throw new Error(`Failed to fetch dashboard data: ${error}`);
     }
@@ -33,10 +33,13 @@ export class DashboardService {
 
   // Get portfolio stats
   async getPortfolioStats(walletAddress: string) {
+    // Attempt to keep portfolio current
+    // NOTE: leaving this call is optional; if updatePortfolioStats is expensive you can remove.
+    await this.updatePortfolioStats(walletAddress);
+
     let portfolio = await Portfolio.findOne({ where: { walletAddress } });
-    // fetch value usd from coin geko and return in response
+
     if (!portfolio) {
-      // Create default portfolio if doesn't exist
       portfolio = await Portfolio.create({
         walletAddress,
         totalValueAda: "0",
@@ -49,33 +52,15 @@ export class DashboardService {
       });
     }
 
-    // Extract ADA → USD price
     const adaToUsdPrice = await getAdaPriceCached();
-    const totalValueAda = parseFloat(portfolio.totalValueAda);
+    const totalValueAda = Number(portfolio.totalValueAda || "0");
     const totalValueUsd = totalValueAda * adaToUsdPrice;
-    // You may add a temporary property to hold USD value for frontend
+
     (portfolio.dataValues as any).totalValueUsd = totalValueUsd.toFixed(2);
     return portfolio;
   }
 
-  // Get holdings (fetch from blockchain or cache)
-  // async getHoldings(ownerAddress: string) {
-  //   // Find all wallets for the owner
-  //   const userWallets: string[] = await CardanoService.getWalletsByOwner(
-  //     ownerAddress
-  //   );
-
-  //   // Fetch holdings for each wallet
-  //   const holdings = await Promise.all(
-  //     userWallets.map(async (walletAddress) => {
-  //       const holdings = await CardanoService.getWalletHoldings(walletAddress);
-  //       return holdings;
-  //     })
-  //   );
-
-  //   return holdings;
-  // }
-  // wherever you implemented getHoldings
+  // Get holdings
   async getHoldings(ownerAddress: string) {
     const userWallets: string[] = await CardanoService.getWalletsByOwner(
       ownerAddress
@@ -90,7 +75,6 @@ export class DashboardService {
 
     const flat = holdingsArrays.flat();
 
-    // Aggregate by unique key (use policyId+assetName or unit)
     const map = new Map<
       string,
       {
@@ -98,14 +82,13 @@ export class DashboardService {
         tokenName: string;
         policyId: string;
         assetName: string;
-        amount: bigint; // keep bigint for safe sum, convert later
+        amount: bigint;
         priceChange24h: string;
-        wallets: string[]; // list of wallet addresses that hold it
+        wallets: string[];
       }
     >();
 
     for (const item of flat) {
-      // determine a stable key. If assetName is hex use policyId+assetName, else unit
       const key =
         item.policyId && item.assetName
           ? `${item.policyId}:${item.assetName}`
@@ -132,7 +115,6 @@ export class DashboardService {
       }
     }
 
-    // Convert map to array and stringify amounts
     const aggregated = Array.from(map.values()).map((v) => ({
       tokenSymbol: v.tokenSymbol,
       tokenName: v.tokenName,
@@ -152,104 +134,151 @@ export class DashboardService {
     return strategies;
   }
 
-  // src/services/dashboard.service.ts
-
+  // Get all strategies (flattened)
   async getAllStrategies(ownerAddress: string) {
-    // find all backend wallets for owner address
     const userWallets: string[] = await CardanoService.getWalletsByOwner(
       ownerAddress
     );
 
-    const strategies = await Promise.all(
+    const strategiesArrays = await Promise.all(
       userWallets.map(async (walletAddress) => {
-        const strategies = await Strategy.findAll({
+        return await Strategy.findAll({
           where: { walletAddress },
         });
-        return strategies;
       })
     );
+
+    const strategies = strategiesArrays.flat();
     console.log("strategies", strategies);
 
-    return strategies.flat();
+    return strategies;
   }
 
   // Get portfolio history for charts
   async getPortfolioHistory(walletAddress: string, days: number = 30) {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+    // compute start date (days ago) as YYYY-MM-DD then make a UTC midnight Date object
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+    const startDateStr = start.toISOString().split("T")[0]; // YYYY-MM-DD
+    const startDateObj = new Date(startDateStr + "T00:00:00.000Z"); // UTC midnight
 
+    // fetch only fields we need
     const history = await PortfolioHistory.findAll({
       where: {
         walletAddress,
         date: {
-          [Op.gte]: startDate,
+          [Op.gte]: startDateObj, // safe date comparison for DATE column
         },
       },
+      attributes: ["date", "totalValueAda", "profitLoss"],
       order: [["date", "ASC"]],
     });
 
-    return history;
+    // price once
+    const adaToUsdPrice = await getAdaPriceCached();
+
+    // normalize output
+    const mapped = history.map((h: any) => {
+      // Normalize date -> YYYY-MM-DD (works whether h.date is Date or string)
+      const dateObj =
+        h.date instanceof Date ? h.date : new Date(String(h.date));
+      const dateStr = dateObj.toISOString().split("T")[0];
+
+      const totalAda = Number(h.totalValueAda ?? 0);
+      const profitLoss = Number(h.profitLoss ?? 0);
+
+      return {
+        date: dateStr,
+        totalValueAda: totalAda.toFixed(6),
+        totalValueUsd: (totalAda * adaToUsdPrice).toFixed(2),
+        profitLoss: profitLoss.toFixed(6),
+      };
+    });
+
+    return mapped;
   }
 
   // Update portfolio stats
   async updatePortfolioStats(walletAddress: string) {
     try {
-      // Get all strategies
       const strategies = await Strategy.findAll({
         where: { walletAddress },
       });
 
-      // Calculate totals
+      console.log("strategies: ", strategies);
+
       let totalInvested = 0;
       let totalCurrent = 0;
       let activeCount = 0;
 
       strategies.forEach((strategy) => {
-        totalInvested += parseFloat(strategy.investedAmount);
-        totalCurrent += parseFloat(strategy.currentValue);
-        if (strategy.isActive) activeCount++;
+        console.log("Strategy data:", strategy.dataValues);
+
+        const invested = Number(strategy.dataValues.investedAmount) || 0;
+        const current = Number(strategy.dataValues.currentValue) || 0;
+
+        totalInvested += invested;
+        totalCurrent += current;
+        if (strategy.dataValues.isActive) activeCount++;
       });
+
+      console.log("Totals:", { totalInvested, totalCurrent, activeCount });
 
       const totalGainLoss = totalCurrent - totalInvested;
       const totalGainLossPercent =
         totalInvested > 0 ? (totalGainLoss / totalInvested) * 100 : 0;
 
-      // Get today's profit (compare with yesterday's snapshot)
+      // Yesterday as DATEONLY string
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayDateStr = yesterday.toISOString().split("T")[0];
 
       const yesterdayHistory = await PortfolioHistory.findOne({
         where: {
           walletAddress,
-          date: yesterday.toISOString().split("T")[0],
+          date: yesterdayDateStr,
         },
       });
 
       const yesterdayValue = yesterdayHistory
-        ? parseFloat(yesterdayHistory.totalValueAda)
+        ? Number(yesterdayHistory.totalValueAda) || totalInvested
         : totalInvested;
+
       const todayProfit = totalCurrent - yesterdayValue;
       const todayProfitPercent =
         yesterdayValue > 0 ? (todayProfit / yesterdayValue) * 100 : 0;
 
-      // Update or create portfolio
+      // Upsert portfolio row
       const [portfolio] = await Portfolio.upsert({
         walletAddress,
-        totalValueAda: totalCurrent.toString(),
-        totalGainLoss: totalGainLoss.toString(),
+        totalValueAda: totalCurrent.toFixed(6),
+        totalGainLoss: totalGainLoss.toFixed(6),
         totalGainLossPercent: totalGainLossPercent.toFixed(2),
-        todayProfit: todayProfit.toString(),
+        todayProfit: todayProfit.toFixed(6),
         todayProfitPercent: todayProfitPercent.toFixed(2),
         activeStrategiesCount: activeCount,
         lastUpdated: new Date(),
       });
 
-      // Extract ADA → USD price
-      const adaToUsdPrice = await getAdaPriceCached();
-      const totalValueAda = parseFloat(portfolio.totalValueAda);
-      const totalValueUsd = totalValueAda * adaToUsdPrice;
+      // Upsert today's history as DATEONLY (YYYY-MM-DD)
+      const todayStr = new Date().toISOString().split("T")[0];
+      await PortfolioHistory.upsert({
+        walletAddress,
+        date: new Date(todayStr),
+        totalValueAda: totalCurrent.toFixed(6),
+        profitLoss: totalGainLoss.toFixed(6),
+      });
 
-      // You may add a temporary property to hold USD value for frontend
+      console.log("✅ PortfolioHistory snapshot created:", {
+        walletAddress,
+        date: todayStr,
+        totalValueAda: totalCurrent.toFixed(6),
+      });
+
+      // Compute USD temporary prop
+      const adaToUsdPrice = await getAdaPriceCached();
+      const totalValueAda = Number(portfolio.totalValueAda);
+      const totalValueUsd = totalValueAda * adaToUsdPrice;
       (portfolio.dataValues as any).totalValueUsd = totalValueUsd.toFixed(2);
 
       return portfolio;
@@ -262,21 +291,19 @@ export class DashboardService {
   async snapshotPortfolio(walletAddress: string) {
     const portfolio = await this.getPortfolioStats(walletAddress);
 
-    const today = new Date().toISOString().split("T")[0];
+    const todayStr = new Date().toISOString().split("T")[0];
 
     const [history] = await PortfolioHistory.upsert({
       walletAddress,
-      date: new Date(today),
+      date: new Date(todayStr),
       totalValueAda: portfolio.totalValueAda,
       profitLoss: portfolio.totalGainLoss,
     });
 
-    // Extract ADA → USD price
     const adaToUsdPrice = await getAdaPriceCached();
-    const totalValueAda = parseFloat(portfolio.totalValueAda);
+    const totalValueAda = Number(portfolio.totalValueAda);
     const totalValueUsd = totalValueAda * adaToUsdPrice;
 
-    // You may add a temporary property to hold USD value for frontend
     (history.dataValues as any).totalValueUsd = totalValueUsd.toFixed(2);
 
     return history;
@@ -289,15 +316,13 @@ export class DashboardService {
     });
 
     const breakdown = strategies.reduce((acc: any, strategy) => {
-      const type = strategy.type;
+      const type = strategy.dataValues.type;
+      const invested = Number(strategy.dataValues.investedAmount) || 0;
+
       if (!acc[type]) {
-        acc[type] = {
-          name: type,
-          value: 0,
-          count: 0,
-        };
+        acc[type] = { name: type, value: 0, count: 0 };
       }
-      acc[type].value += parseFloat(strategy.investedAmount);
+      acc[type].value += invested;
       acc[type].count++;
       return acc;
     }, {});
@@ -310,7 +335,7 @@ export class DashboardService {
     return Object.values(breakdown).map((item: any) => ({
       name: item.name,
       value: item.value,
-      percentage: total > 0 ? ((item.value / total) * 100).toFixed(2) : 0,
+      percentage: total > 0 ? ((item.value / total) * 100).toFixed(2) : "0.00",
       count: item.count,
     }));
   }

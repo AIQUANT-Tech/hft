@@ -42,7 +42,7 @@ PortfolioHistory.init(
       field: "wallet_address",
     },
     date: {
-      type: DataTypes.DATEONLY,
+      type: DataTypes.DATE,
       allowNull: false,
     },
     totalValueAda: {
