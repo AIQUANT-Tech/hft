@@ -7,6 +7,10 @@ import {
 import { ACAStrategy, ACAConfig } from "../strategies/ACAStrategy.js";
 import { logger } from "./logger.service.js";
 import { GridConfig, GridStrategy } from "../strategies/GridStrategy.js";
+import {
+  StopLossTakeProfitStrategy,
+  StopLossTakeProfitConfig,
+} from "../strategies/StopLossTakeProfitStrategy.js";
 import { strategyService } from "./strategy.service.js";
 
 export class StrategyManagerService {
@@ -154,6 +158,48 @@ export class StrategyManagerService {
     });
 
     logger.success(`Grid strategy added`, config.name, "strategy");
+
+    return config.id;
+  }
+
+  async addStopLossTakeProfitStrategy(
+    config: StopLossTakeProfitConfig
+  ): Promise<string> {
+    const strategy = new StopLossTakeProfitStrategy(config);
+
+    if (!strategy.validate()) {
+      logger.error(
+        "Invalid Stop Loss/Take Profit configuration",
+        config.name,
+        "strategy"
+      );
+      throw new Error("Invalid Stop Loss/Take Profit configuration");
+    }
+
+    this.strategies.set(config.id, strategy);
+
+    // ✅ Save to database with correct investedAmount (token amount * entry price)
+    const investedAmountAda = (
+      config.amount * (config.entryPrice ?? 0)
+    ).toFixed(6);
+
+    await strategyService.upsertStrategy({
+      id: config.id,
+      walletAddress: config.walletAddress,
+      name: config.name,
+      type: "sltp",
+      tradingPair: config.tradingPair,
+      baseToken: config.baseToken,
+      quoteToken: config.quoteToken,
+      investedAmount: investedAmountAda,
+      config: config,
+    });
+
+    logger.success(
+      `🛡️ Stop Loss/Take Profit strategy added: SL:${config.stopLossPercent}% TP:${config.takeProfitPercent}%`,
+      config.name,
+      "strategy"
+    );
 
     return config.id;
   }

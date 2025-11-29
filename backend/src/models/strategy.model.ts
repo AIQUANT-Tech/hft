@@ -7,7 +7,7 @@ interface StrategyAttributes {
   id: string;
   walletAddress: string;
   name: string;
-  type: "grid" | "dca" | "price-target" | "stop-loss-take-profit";
+  type: "grid" | "dca" | "price-target" | "sltp";
   tradingPair: string;
   baseToken: string;
   quoteToken: string;
@@ -36,7 +36,7 @@ class Strategy
   declare id: string;
   declare walletAddress: string;
   declare name: string;
-  declare type: "grid" | "dca" | "price-target" | "stop-loss-take-profit";
+  declare type: "grid" | "dca" | "price-target" | "sltp";
   declare tradingPair: string;
   declare baseToken: string;
   declare quoteToken: string;
@@ -70,12 +70,7 @@ Strategy.init(
       allowNull: false,
     },
     type: {
-      type: DataTypes.ENUM(
-        "grid",
-        "dca",
-        "price-target",
-        "stop-loss-take-profit"
-      ),
+      type: DataTypes.ENUM("grid", "dca", "price-target", "sltp"),
       allowNull: false,
     },
     tradingPair: {

@@ -1,5 +1,3 @@
-// src/strategies/BaseStrategy.ts
-
 import { tradingBotService } from "../services/tradingBot.service.js";
 
 export interface StrategyConfig {
@@ -7,10 +5,13 @@ export interface StrategyConfig {
   name: string;
   walletAddress: string;
   tradingPair: string;
-  baseToken: string;
-  quoteToken: string;
+  baseToken: string; // token being BOUGHT/ SOLD
+  quoteToken: string; // token used to BUY/SELL
   isActive: boolean;
   poolId: string;
+
+  entryPrice?: number;
+  amount?: number;
 }
 
 export abstract class BaseStrategy {
@@ -25,20 +26,23 @@ export abstract class BaseStrategy {
   abstract validate(): boolean;
   abstract getStatus(): object;
 
+  /**
+   * Generic order creation
+   */
   async createOrder(orderData: {
     targetPrice: number;
     triggerAbove: boolean;
     isBuy: boolean;
     amount: number;
   }) {
-    // ✅ Get poolId from strategy config (for PriceTargetStrategy)
-    const poolId = (this.config as any).poolId || this.config.poolId;
+    const poolId = this.config.poolId;
 
     if (!poolId) {
       throw new Error("Pool ID is required for creating orders");
     }
-    const priceStr = orderData.targetPrice.toFixed(20); // Use high precision
-    // Remove trailing zeros
+
+    // High precision cleanup
+    const priceStr = orderData.targetPrice.toFixed(20);
     orderData.targetPrice = Number(priceStr.replace(/\.?0+$/, ""));
 
     return await tradingBotService.createOrder({
@@ -48,6 +52,30 @@ export abstract class BaseStrategy {
       quoteToken: this.config.quoteToken,
       poolId,
       ...orderData,
+    });
+  }
+
+  /**
+   * Helper for BUY order at market price
+   */
+  async marketBuy(price: number, amount: number) {
+    return await this.createOrder({
+      targetPrice: price,
+      triggerAbove: true, // Buy immediately (market)
+      isBuy: true,
+      amount,
+    });
+  }
+
+  /**
+   * Helper for SELL order at market price
+   */
+  async marketSell(price: number, amount: number) {
+    return await this.createOrder({
+      targetPrice: price,
+      triggerAbove: false, // Sell immediately (market)
+      isBuy: false,
+      amount,
     });
   }
 

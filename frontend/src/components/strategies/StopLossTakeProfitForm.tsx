@@ -22,6 +22,7 @@ export default function StopLossTakeProfitForm({
   const isDark = useSelector(selectIsDark);
 
   const [formData, setFormData] = useState({
+    name: "",
     walletAddress: wallets[0] || "",
     tradingPair: "",
     baseToken: "",
@@ -30,22 +31,26 @@ export default function StopLossTakeProfitForm({
     stopLossPercent: "10", // 10% loss
     takeProfitPercent: "20", // 20% profit
     executeOnce: true,
+    poolId: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const payload = {
-        ...formData,
-        type: "stop-loss-take-profit",
-        config: JSON.stringify({
-          ...formData,
-          stopLossPercent: parseFloat(formData.stopLossPercent),
-          takeProfitPercent: parseFloat(formData.takeProfitPercent),
-        }),
+        name: formData.name,
+        walletAddress: formData.walletAddress,
+        tradingPair: formData.tradingPair,
+        baseToken: formData.baseToken,
+        quoteToken: formData.quoteToken,
+        amount: formData.amount,
+        stopLossPercent: formData.stopLossPercent,
+        takeProfitPercent: formData.takeProfitPercent,
+        executeOnce: formData.executeOnce,
+        poolId: formData.poolId,
       };
 
-      await axios.post(`${API_URL}/api/strategies`, payload, {
+      await axios.post(`${API_URL}/api/strategy/sltp`, payload, {
         withCredentials: true,
       });
 
@@ -70,6 +75,28 @@ export default function StopLossTakeProfitForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Strategy Name */}
+      <div>
+        <label
+          className={`block text-sm font-semibold mb-2 ${
+            isDark ? "text-gray-300" : "text-gray-700"
+          }`}
+        >
+          Strategy Name *
+        </label>
+        <input
+          type="text"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          placeholder="e.g., Stop Loss / Take Profit"
+          required
+          className={`w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none transition-colors ${
+            isDark
+              ? "bg-slate-800 border-white/10 text-white focus:border-blue-500"
+              : "bg-gray-50 border-gray-200 text-gray-900 focus:border-blue-500"
+          }`}
+        />
+      </div>
       {/* Wallet */}
       <div>
         <label
@@ -142,7 +169,7 @@ export default function StopLossTakeProfitForm({
             isDark ? "text-white" : "text-gray-900"
           }`}
         >
-          Amount (ADA)
+          Amount
         </label>
         <input
           type="number"

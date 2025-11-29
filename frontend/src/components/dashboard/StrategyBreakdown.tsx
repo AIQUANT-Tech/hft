@@ -6,7 +6,7 @@ import { selectIsDark } from "@/redux/themeSlice";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 type StrategyDto = {
-  type: "grid" | "dca" | "price-target" | "stop-loss-take-profit";
+  type: "grid" | "dca" | "price-target" | "sltp";
   investedAmount: string;
   isActive: boolean;
 };
@@ -21,7 +21,7 @@ const TYPE_LABELS: Record<StrategyDto["type"], string> = {
   grid: "Grid Trading",
   dca: "DCA",
   "price-target": "Price Target",
-  "stop-loss-take-profit": "SL/TP",
+  sltp: "SL/TP",
 };
 
 export default function StrategyBreakdown({ data }: StrategyBreakdownProps) {

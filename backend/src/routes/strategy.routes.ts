@@ -224,12 +224,87 @@ router.post("/grid", authenticateJWT, async (req: AuthRequest, res) => {
   }
 });
 
+/* ============================================================
+   STOP LOSS / TAKE PROFIT STRATEGY
+============================================================ */
+router.post("/sltp", authenticateJWT, async (req: AuthRequest, res) => {
+  try {
+    const {
+      name,
+      walletAddress,
+      tradingPair,
+      baseToken,
+      quoteToken,
+      entryPrice,
+      stopLossPercent,
+      takeProfitPercent,
+      amount,
+      poolId,
+    } = req.body;
+
+    const userAddress = req.user?.walletAddress;
+
+    if (!userAddress) {
+      return res.status(401).json({ success: false, error: "Unauthorized" });
+    }
+
+    // verify wallet ownership
+    const isOwner = await CardanoService.verifyWalletOwnership(
+      walletAddress,
+      userAddress
+    );
+
+    if (!isOwner) {
+      return res.status(403).json({
+        success: false,
+        error: "Not authorized to use this wallet",
+      });
+    }
+
+    const strategyId = `sltp-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(7)}`;
+
+    strategyManager.addStopLossTakeProfitStrategy({
+      id: strategyId,
+      name,
+      walletAddress,
+      tradingPair,
+      baseToken,
+      quoteToken,
+      poolId,
+      isActive: true,
+      entryPrice,
+      stopLossPercent,
+      takeProfitPercent,
+      amount,
+    });
+
+    logger.success(`SLTP Strategy Created: ${name}`, name, "strategy");
+
+    res.json({
+      success: true,
+      strategyId,
+      message: "StopLoss/TakeProfit strategy created successfully",
+    });
+  } catch (error: any) {
+    logger.error(
+      `Failed to create SLTP strategy: ${error.message}`,
+      undefined,
+      "strategy"
+    );
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // GET /api/strategy/live - Get live strategies with enriched data
 // src/routes/strategy.routes.ts
 
 router.get("/live", async (req, res) => {
   try {
     const strategies = strategyManager.getAllStrategies();
+    console.log("strategies: ", strategies);
+
     const enrichedStrategies = [];
 
     for (const s of strategies) {
@@ -297,6 +372,23 @@ router.get("/live", async (req, res) => {
             totalProfit: status.totalProfit,
             profitPerGrid: status.profitPerGrid,
             executeOnce: status.executeOnce,
+            lastUpdate: new Date().toISOString(),
+          });
+        } else if (status.strategy === "sltp") {
+          enrichedStrategies.push({
+            id: s.id,
+            type: "sltp",
+            name: status.name,
+            tradingPair: status.tradingPair,
+            entryPrice: status.entryPrice,
+            stopLossPercent: status.stopLossPercent,
+            takeProfitPercent: status.takeProfitPercent,
+            stopLossPrice: status.stopLossPrice,
+            takeProfitPrice: status.takeProfitPrice,
+            currentPrice: status.currentPrice,
+            isActive: status.isActive,
+            amount: status.amount,
+            conditionTriggered: status.conditionTriggered,
             lastUpdate: new Date().toISOString(),
           });
         }

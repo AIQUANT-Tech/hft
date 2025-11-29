@@ -59,7 +59,25 @@ interface GridStrategy extends BaseStrategy {
   executeOnce: boolean;
 }
 
-type Strategy = PriceTargetStrategy | ACAStrategy | GridStrategy;
+interface StopLossTakeProfitStrategy extends BaseStrategy {
+  strategy: "sltp";
+  entryPrice: number;
+  currentPrice: number;
+  priceChangePercent: number;
+  stopLossPercent: number;
+  takeProfitPercent: number;
+  hasPosition: boolean;
+  positionAmount: number;
+  buyOrderId?: string;
+  sellOrderId?: string;
+  lastPriceCheck?: string;
+}
+
+type Strategy =
+  | PriceTargetStrategy
+  | ACAStrategy
+  | GridStrategy
+  | StopLossTakeProfitStrategy;
 
 export interface LogMessage {
   id: string;
@@ -469,6 +487,66 @@ const StrategyMonitor: React.FC<StrategyMonitorProps> = ({
             </p>
           </div>
         </>
+      );
+    }
+
+    if ("type" in strategy && strategy.type === "SLTP") {
+      return (
+        <div className="p-4 border rounded-md bg-gray-50 dark:bg-gray-800 mt-4">
+          <h3 className="font-semibold text-lg mb-2">
+            Stop Loss / Take Profit
+          </h3>
+
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <span className="font-medium">Entry Price:</span>{" "}
+              {formatPrice(strategy.entryPrice)}
+            </div>
+            <div>
+              <span className="font-medium">Current Price:</span>{" "}
+              {formatPrice(strategy.currentPrice)}
+            </div>
+            <div>
+              <span className="font-medium">Change %:</span>{" "}
+              {strategy.priceChangePercent.toFixed(4)}%
+            </div>
+
+            <div>
+              <span className="font-medium">Stop Loss %:</span>{" "}
+              {strategy.stopLossPercent}%
+            </div>
+            <div>
+              <span className="font-medium">Take Profit %:</span>{" "}
+              {strategy.takeProfitPercent}%
+            </div>
+
+            <div>
+              <span className="font-medium">Has Position:</span>{" "}
+              {strategy.hasPosition ? "Yes" : "No"}
+            </div>
+
+            <div>
+              <span className="font-medium">Position Amount:</span>{" "}
+              {strategy.positionAmount}
+            </div>
+
+            <div>
+              <span className="font-medium">Buy Order ID:</span>{" "}
+              {strategy.buyOrderId || "—"}
+            </div>
+            <div>
+              <span className="font-medium">Sell Order ID:</span>{" "}
+              {strategy.sellOrderId || "—"}
+            </div>
+
+            <div className="col-span-2">
+              <span className="font-medium">Last Price Check:</span>{" "}
+              {strategy.lastPriceCheck
+                ? new Date(strategy.lastPriceCheck).toLocaleString()
+                : "N/A"}
+            </div>
+          </div>
+        </div>
       );
     }
 

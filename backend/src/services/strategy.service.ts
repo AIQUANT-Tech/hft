@@ -9,7 +9,7 @@ export class StrategyService {
     id: string;
     walletAddress: string;
     name: string;
-    type: "grid" | "dca" | "price-target" | "stop-loss-take-profit";
+    type: "grid" | "dca" | "price-target" | "sltp";
     tradingPair: string;
     baseToken: string;
     quoteToken: string;

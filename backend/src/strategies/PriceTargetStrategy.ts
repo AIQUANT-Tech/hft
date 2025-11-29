@@ -163,6 +163,7 @@ export class PriceTargetStrategy extends BaseStrategy {
 
     return {
       strategy: "PriceTarget",
+      type: "PriceTarget",
       name: this.config.name,
       tradingPair: this.config.tradingPair,
       currentPrice: this.currentPrice || 0,

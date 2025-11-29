@@ -221,7 +221,7 @@ VALUES
 (UUID(),
  'addr_test1qpwsc7e7a088fwzramdawcyafkjt9yuq3afxhuhq5thchey7exh73va75c8mqfql2nkk8m4jtvwmz7y7hc3qkrr4nvuq2m4kzs',
  'WMT Stop Loss',
- 'stop-loss-take-profit',
+ 'sltp',
  'WMT-ADA',
  '1d7f33bd23d85e1a25d87d86fac4f199c3197a2f7afeb662a0f34e1e.776f726c646d6f62696c65746f6b656e',
  'ADA',
