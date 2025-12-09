@@ -68,9 +68,9 @@ interface StopLossTakeProfitStrategy extends BaseStrategy {
   takeProfitPercent: number;
   hasPosition: boolean;
   positionAmount: number;
-  buyOrderId?: string;
-  sellOrderId?: string;
-  lastPriceCheck?: string;
+  buyOrderId: string;
+  sellOrderId: string;
+  lastPriceCheck: string;
 }
 
 type Strategy =
@@ -177,6 +177,8 @@ const StrategyMonitor: React.FC<StrategyMonitorProps> = ({
 
       if (response.data.success) {
         const newStrategies = response.data.strategies;
+        console.log(newStrategies);
+
         setStrategies(newStrategies);
         setError(null);
         setLastUpdateTime(new Date());
@@ -490,9 +492,13 @@ const StrategyMonitor: React.FC<StrategyMonitorProps> = ({
       );
     }
 
-    if ("type" in strategy && strategy.type === "SLTP") {
+    if ("type" in strategy && strategy.type === "sltp") {
       return (
-        <div className="p-4 border rounded-md bg-gray-50 dark:bg-gray-800 mt-4">
+        <div
+          className={`p-4 border rounded-md ${
+            isDark ? "bg-gray-800" : "bg-gray-50"
+          } mt-4`}
+        >
           <h3 className="font-semibold text-lg mb-2">
             Stop Loss / Take Profit
           </h3>
@@ -500,15 +506,15 @@ const StrategyMonitor: React.FC<StrategyMonitorProps> = ({
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <span className="font-medium">Entry Price:</span>{" "}
-              {formatPrice(strategy.entryPrice)}
+              {strategy.entryPrice}
             </div>
             <div>
               <span className="font-medium">Current Price:</span>{" "}
-              {formatPrice(strategy.currentPrice)}
+              {strategy.currentPrice}
             </div>
             <div>
               <span className="font-medium">Change %:</span>{" "}
-              {strategy.priceChangePercent.toFixed(4)}%
+              {strategy.priceChangePercent}%
             </div>
 
             <div>

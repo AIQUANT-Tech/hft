@@ -381,15 +381,21 @@ router.get("/live", async (req, res) => {
             name: status.name,
             tradingPair: status.tradingPair,
             entryPrice: status.entryPrice,
+            currentPrice: status.currentPrice,
+            priceChangePercent: status.priceChangePercent,
             stopLossPercent: status.stopLossPercent,
             takeProfitPercent: status.takeProfitPercent,
+            hasPosition: false,
+            positionAmount: status.positionAmount,
             stopLossPrice: status.stopLossPrice,
             takeProfitPrice: status.takeProfitPrice,
-            currentPrice: status.currentPrice,
+            buyOrderId: status.buyOrderId,
+            sellOrderId: status.sellOrderId,
             isActive: status.isActive,
             amount: status.amount,
             conditionTriggered: status.conditionTriggered,
             lastUpdate: new Date().toISOString(),
+            lastPriceCheck: status.lastPriceCheck,
           });
         }
       } catch (err) {
